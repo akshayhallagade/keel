@@ -1,0 +1,6 @@
+**/dist
+**/.turbo
+node_modules
+.claude
+pnpm-lock.yaml
+backend/db/prisma/migrations

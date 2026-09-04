@@ -1,0 +1,12 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./apps/web" },
+    { "path": "./backend/api" },
+    { "path": "./backend/db" },
+    { "path": "./packages/types" },
+    { "path": "./packages/validation" },
+    { "path": "./packages/utils" },
+    { "path": "./packages/design-system" }
+  ]
+}

@@ -1,0 +1,775 @@
+@keyframes screenIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes rowIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes panelIn {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes tickIn {
+  0% {
+    transform: scale(0) rotate(-14deg);
+  }
+  60% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+@keyframes barGrow {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes railIn {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes drawSeg {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes dotPop {
+  0% {
+    transform: scale(0);
+  }
+  70% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes wordIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    letter-spacing: 0.7em;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    letter-spacing: 0.42em;
+  }
+}
+@keyframes splashOut {
+  to {
+    opacity: 0;
+    transform: scale(1.035);
+    visibility: hidden;
+  }
+}
+
+.home-shell {
+  --ink: #221f1b;
+  --paper: #faf8f3;
+  --sidebar-bg: #f5f2ea;
+  --canvas: #edeae3;
+  --line: #e5e0d6;
+  --line-soft: #efebe2;
+  --text-2: #5c564c;
+  --text-3: #8a8172;
+  --muted: #a39b8b;
+  --muted-2: #c8c0b0;
+  --check-border: #b8af9f;
+  --positive: #5b7b4f;
+  --track: #eae5d9;
+  --input-bg: #fdfcf8;
+
+  min-height: 100vh;
+  display: flex;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'IBM Plex Sans', sans-serif;
+  position: relative;
+}
+
+.home-shell.dark-mode {
+  filter: invert(0.92) hue-rotate(180deg);
+}
+
+/* ---------- Splash ---------- */
+.hs-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #f3f0e7;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  animation: splashOut 0.55s ease 2.5s both;
+}
+.hs-splash-word {
+  font:
+    300 25px 'IBM Plex Sans',
+    sans-serif;
+  color: #a9a196;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  animation: wordIn 0.6s ease 1.55s both;
+}
+.hs-splash-line {
+  stroke: #211d18;
+  stroke-width: 16;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+}
+.hs-splash-dot {
+  fill: #af4933;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: dotPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 1.25s both;
+}
+
+/* ---------- Sidebar ---------- */
+.hs-sidebar {
+  width: 192px;
+  flex: none;
+  border-right: 1px solid var(--line);
+  padding: 26px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  background: var(--sidebar-bg);
+}
+.hs-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.hs-sidebar-brand-word {
+  font:
+    600 13px 'IBM Plex Mono',
+    monospace;
+  letter-spacing: 0.3em;
+  color: var(--ink);
+}
+.hs-nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.hs-nav-label {
+  font:
+    500 9px 'IBM Plex Mono',
+    monospace;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+.hs-nav-item {
+  font-size: 13.5px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  font-family: inherit;
+}
+.hs-profile {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--line);
+  text-align: left;
+  font-family: inherit;
+}
+.hs-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font:
+    600 10px 'IBM Plex Mono',
+    monospace;
+  flex: none;
+}
+.hs-avatar-lg {
+  width: 56px;
+  height: 56px;
+  font-size: 16px;
+}
+.hs-profile-info {
+  min-width: 0;
+}
+.hs-profile-name {
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hs-profile-tag {
+  font:
+    400 9px 'IBM Plex Mono',
+    monospace;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+/* ---------- Screens generic ---------- */
+.hs-screen {
+  flex: 1;
+  padding: 30px 36px;
+  min-width: 0;
+  animation: screenIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.hs-screen.with-rail {
+  display: flex;
+  gap: 40px;
+}
+.hs-main-col {
+  flex: 1.4;
+  min-width: 0;
+}
+.hs-main-col.wide {
+  flex: 1.5;
+}
+.hs-rail {
+  width: 300px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  animation: railIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.12s backwards;
+}
+.hs-rail.narrow {
+  width: 280px;
+}
+.hs-title {
+  font-size: 22px;
+  font-weight: 600;
+}
+.hs-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.hs-meta {
+  font:
+    400 11px 'IBM Plex Mono',
+    monospace;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.hs-meta-sm {
+  font:
+    400 10px 'IBM Plex Mono',
+    monospace;
+  color: var(--muted);
+}
+.hs-section-label {
+  font:
+    500 10px 'IBM Plex Mono',
+    monospace;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+.hs-section-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 26px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+.hs-view-all {
+  font:
+    400 10px 'IBM Plex Mono',
+    monospace;
+  color: var(--accent);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+/* ---------- List rows (todos/routines/etc.) ---------- */
+.hs-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line-soft);
+  transition:
+    opacity 0.5s ease,
+    transform 0.45s ease;
+  animation: rowIn 0.35s ease backwards;
+  width: 100%;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+  cursor: default;
+}
+.hs-checkbox {
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--paper);
+  font-size: 9px;
+  cursor: pointer;
+  border-width: 1.5px;
+  border-style: solid;
+  padding: 0;
+  background: none;
+}
+.hs-checkbox.lg {
+  width: 17px;
+  height: 17px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+.hs-checkbox-tick {
+  display: block;
+}
+.hs-row-body {
+  flex: 1;
+  min-width: 0;
+}
+.hs-row-title {
+  font-size: 14.5px;
+  font-weight: 500;
+}
+.hs-row-sub {
+  font:
+    400 10px 'IBM Plex Mono',
+    monospace;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.hs-row-action {
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  padding: 2px 4px;
+  background: none;
+  border: none;
+  font:
+    400 11px 'IBM Plex Mono',
+    monospace;
+  color: var(--muted);
+}
+.hs-row-action:hover {
+  color: var(--accent);
+}
+.hs-star-btn {
+  font-size: 15px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 2px 3px;
+  transition: opacity 0.15s ease;
+}
+
+/* ---------- Progress bars ---------- */
+.hs-bar-track {
+  height: 5px;
+  background: var(--track);
+  border-radius: 3px;
+}
+.hs-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transform-origin: left;
+  animation: barGrow 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.2s backwards;
+}
+
+/* ---------- Cards / rails ---------- */
+.hs-card {
+  border: 1px solid var(--line);
+  background: var(--input-bg);
+  padding: 20px 22px;
+  animation: rowIn 0.35s ease backwards;
+}
+.hs-stat-tile {
+  flex: 1;
+  border: 1px solid var(--line);
+  background: var(--input-bg);
+  padding: 14px 16px;
+}
+.hs-stat-label {
+  font:
+    500 9px 'IBM Plex Mono',
+    monospace;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+.hs-stat-value {
+  font:
+    500 22px 'IBM Plex Mono',
+    monospace;
+  margin-top: 6px;
+}
+
+/* ---------- Chips / tabs / toggles ---------- */
+.hs-chip {
+  font:
+    500 9px 'IBM Plex Mono',
+    monospace;
+  letter-spacing: 0.08em;
+  padding: 10px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+  border: 1px solid var(--line);
+  background: var(--input-bg);
+  color: var(--text-2);
+}
+.hs-chip-flat {
+  font:
+    500 9px 'IBM Plex Mono',
+    monospace;
+  letter-spacing: 0.06em;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  background: var(--input-bg);
+  color: var(--text-2);
+  cursor: pointer;
+}
+.hs-toggle-track {
+  border-radius: 9px;
+  position: relative;
+  cursor: pointer;
+  flex: none;
+  transition: background 0.2s;
+  border: none;
+  padding: 0;
+}
+.hs-toggle-knob {
+  position: absolute;
+  top: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--paper);
+  transition: left 0.2s;
+}
+
+/* ---------- Inputs / add-rows ---------- */
+.hs-add-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  border: 1px solid var(--line);
+  background: var(--input-bg);
+  padding: 10px 14px;
+}
+.hs-add-plus {
+  font:
+    500 13px 'IBM Plex Mono',
+    monospace;
+  color: var(--accent);
+}
+.hs-add-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font:
+    400 13px 'IBM Plex Sans',
+    sans-serif;
+  color: var(--ink);
+}
+.hs-add-details {
+  font:
+    500 10px 'IBM Plex Mono',
+    monospace;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  cursor: pointer;
+  flex: none;
+  background: none;
+  border: none;
+}
+.hs-field-label {
+  font:
+    500 9px 'IBM Plex Mono',
+    monospace;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+.hs-field-input {
+  border: 1px solid var(--line);
+  background: var(--input-bg);
+  outline: none;
+  padding: 10px 12px;
+  font:
+    400 14px 'IBM Plex Sans',
+    sans-serif;
+  color: var(--ink);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ---------- Buttons ---------- */
+.hs-btn-accent {
+  background: var(--accent);
+  color: var(--paper);
+  font:
+    500 11px 'IBM Plex Mono',
+    monospace;
+  letter-spacing: 0.1em;
+  padding: 12px 0;
+  cursor: pointer;
+  border: none;
+  text-align: center;
+}
+.hs-btn-ghost {
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  font:
+    500 11px 'IBM Plex Mono',
+    monospace;
+  letter-spacing: 0.1em;
+  padding: 12px 18px;
+  cursor: pointer;
+  background: none;
+  text-align: center;
+}
+.hs-btn-small-accent {
+  font:
+    500 10px 'IBM Plex Mono',
+    monospace;
+  letter-spacing: 0.1em;
+  color: var(--paper);
+  background: var(--accent);
+  padding: 8px 13px;
+  cursor: pointer;
+  border: none;
+}
+
+/* ---------- Panels (side drawers) ---------- */
+.hs-panel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(34, 31, 27, 0.25);
+  z-index: 10;
+  border: none;
+  padding: 0;
+}
+.hs-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 340px;
+  background: var(--paper);
+  border-left: 1px solid var(--line);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.1);
+  padding: 28px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  color: var(--ink);
+  z-index: 11;
+  animation: panelIn 0.3s ease both;
+  overflow-y: auto;
+}
+.hs-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.hs-panel-title {
+  font:
+    500 10px 'IBM Plex Mono',
+    monospace;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+.hs-panel-close {
+  font:
+    400 12px 'IBM Plex Mono',
+    monospace;
+  color: var(--muted);
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+.hs-panel-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.hs-panel-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+}
+.hs-panel-actions .hs-btn-accent {
+  flex: 1;
+}
+
+/* ---------- Confirm delete modal ---------- */
+.hs-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(34, 31, 27, 0.35);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  padding: 0;
+}
+.hs-confirm-box {
+  width: 330px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.2);
+  padding: 26px;
+  animation: panelIn 0.25s ease both;
+}
+.hs-confirm-title {
+  font-size: 16.5px;
+  font-weight: 600;
+  margin-bottom: 9px;
+}
+.hs-confirm-msg {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.55;
+}
+.hs-confirm-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+}
+.hs-confirm-actions button {
+  flex: 1;
+  padding: 11px 0;
+}
+
+/* ---------- Calendar (todo panel due date) ---------- */
+.hs-cal {
+  border: 1px solid var(--line);
+  background: var(--input-bg);
+  padding: 12px 13px;
+}
+.hs-cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.hs-cal-nav {
+  font:
+    400 15px 'IBM Plex Mono',
+    monospace;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0 8px;
+  line-height: 1;
+  background: none;
+  border: none;
+}
+.hs-cal-nav:hover {
+  color: var(--accent);
+}
+.hs-cal-label {
+  font:
+    500 10px 'IBM Plex Mono',
+    monospace;
+  letter-spacing: 0.12em;
+}
+.hs-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.hs-cal-dow {
+  text-align: center;
+  font:
+    500 8px 'IBM Plex Mono',
+    monospace;
+  letter-spacing: 0.06em;
+  color: var(--muted-2);
+  margin-bottom: 3px;
+}
+.hs-cal-cell {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  border-radius: 4px;
+  cursor: pointer;
+  background: none;
+  border: 1px solid transparent;
+}
+
+/* ---------- Alarm clocks ---------- */
+.hs-alarm-clock-line {
+  stroke-linecap: round;
+}
+
+/* ---------- Misc ---------- */
+.hs-newsreader {
+  font-family: 'Newsreader', serif;
+}
+.hs-image-slot {
+  height: 150px;
+  background: var(--track);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font:
+    400 11px 'IBM Plex Mono',
+    monospace;
+}

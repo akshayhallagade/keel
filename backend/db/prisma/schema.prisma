@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Required by the installed Prisma 6.19.3 CLI (prisma validate/migrate fail without it).
+  // prisma.config.ts also sets datasource.url; drop this line only once on Prisma 7.
+  url = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions  Session[]
+  tags      Tag[]
+  todos     Todo[]
+  projects  Project[]
+  routines  Routine[]
+  reminders Reminder[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+/// A user-defined label used to color-code and filter todos/projects (e.g. "work", "life").
+model Tag {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name   String
+  color  String?
+
+  todos    Todo[]
+  projects Project[]
+
+  @@unique([userId, name])
+  @@map("tags")
+}
+
+enum TodoGroup {
+  TODAY
+  THIS_WEEK
+  SOMEDAY
+}
+
+enum RecurrenceFrequency {
+  NONE
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+model Todo {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  text  String
+  tagId String?
+  tag   Tag?    @relation(fields: [tagId], references: [id], onDelete: SetNull)
+
+  group     TodoGroup @default(TODAY)
+  due       DateTime?
+  recurrence RecurrenceFrequency @default(NONE)
+
+  starred     Boolean   @default(false)
+  order       Int       @default(0)
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reminders Reminder[]
+
+  @@index([userId, group])
+  @@index([userId, tagId])
+  @@index([userId, completedAt])
+  @@map("todos")
+}
+
+model Project {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name  String
+  tagId String?
+  tag   Tag?    @relation(fields: [tagId], references: [id], onDelete: SetNull)
+
+  paused Boolean @default(false)
+  pinned Boolean @default(false)
+  order  Int     @default(0)
+
+  tasks ProjectTask[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("projects")
+}
+
+model ProjectTask {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  text  String
+  done  Boolean @default(false)
+  order Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@map("project_tasks")
+}
+
+enum RoutinePeriod {
+  WAKE_UP
+  MORNING
+  AFTERNOON
+  EVENING
+  BEDTIME
+}
+
+model Routine {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name   String
+  period RoutinePeriod
+  time   String @db.VarChar(5) // "HH:mm", 24-hour
+  streak Int    @default(0)
+
+  completions RoutineCompletion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("routines")
+}
+
+/// One row per calendar day a routine was tracked, replacing an ad-hoc boolean[] blob
+/// so history/streaks can be queried and extended (e.g. past a single week) directly in SQL.
+model RoutineCompletion {
+  id        String   @id @default(cuid())
+  routineId String
+  routine   Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  done      Boolean  @default(false)
+  missed    Boolean  @default(false)
+
+  @@unique([routineId, date])
+  @@map("routine_completions")
+}
+
+model Reminder {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  todoId String?
+  todo   Todo?   @relation(fields: [todoId], references: [id], onDelete: Cascade)
+
+  text     String
+  remindAt DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, remindAt])
+  @@map("reminders")
+}
