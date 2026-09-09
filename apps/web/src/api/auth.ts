@@ -2,6 +2,14 @@ import type { LoginInput, SignupInput } from '@keel/validation'
 import type { AuthSession } from '@keel/types'
 import { apiFetch, setAccessToken, clearAccessToken } from './client'
 
+export async function checkEmail(email: string) {
+  const { exists } = await apiFetch<{ exists: boolean }>('/auth/check-email', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
+  return exists
+}
+
 export async function signup(input: SignupInput) {
   const session = await apiFetch<AuthSession>('/auth/signup', {
     method: 'POST',

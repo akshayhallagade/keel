@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import gsap from 'gsap'
+import type { User } from '@keel/types'
 import LogoMark from '../../components/LogoMark'
+import { checkEmail, login as loginRequest, signup } from '../../api/auth'
+import { ApiError } from '../../api/client'
 import './Login.css'
 
 type Step = 'email' | 'password' | 'details'
@@ -13,10 +16,8 @@ interface ValidationError {
 }
 
 interface LoginProps {
-  onAuthenticated?: (user: { email: string; isReturning: boolean }) => void
+  onAuthenticated?: (user: User) => void
 }
-
-const KNOWN_EMAILS = ['demo@keel.app', 'you@example.com']
 
 const QUOTES = [
   {
@@ -32,6 +33,11 @@ const QUOTES = [
 
 const STRENGTH_PALETTE = ['#C64F3B', '#C0913C', '#5B7B4F']
 const STRENGTH_LABELS = ['WEAK', 'OKAY', 'GOOD', 'STRONG']
+
+const errorMessage = (e: unknown) =>
+  e instanceof ApiError
+    ? e.message
+    : 'Could not reach the server. Check your connection and try again.'
 
 function passwordStrength(pw: string) {
   let score = 0
@@ -100,6 +106,8 @@ export default function Login({ onAuthenticated }: LoginProps) {
     undefined,
   )
 
+  const authedUserRef = useRef<User | null>(null)
+
   const doContinueRef = useRef(() => {})
   useEffect(() => {
     doContinueRef.current = () => {
@@ -111,9 +119,11 @@ export default function Login({ onAuthenticated }: LoginProps) {
           duration: 0.3,
           ease: 'power2.in',
         })
-        .call(() => onAuthenticated?.({ email, isReturning }))
+        .call(() => {
+          if (authedUserRef.current) onAuthenticated?.(authedUserRef.current)
+        })
     }
-  }, [email, isReturning, onAuthenticated])
+  }, [onAuthenticated])
 
   const fieldRefForError: Record<
     FieldName,
@@ -430,10 +440,10 @@ export default function Login({ onAuthenticated }: LoginProps) {
       }
       return null
     }
-    if (password.length < 6) {
+    if (password.length < 8) {
       return {
         field: 'password',
-        message: 'Password must be at least 6 characters.',
+        message: 'Password must be at least 8 characters.',
       }
     }
     if (step === 'details') {
@@ -493,12 +503,15 @@ export default function Login({ onAuthenticated }: LoginProps) {
         { opacity: 0, scale: 1 },
         { opacity: 0.2, scale: 1.04, duration: 0.4, ease: 'power2.out' },
       )
-      setTimeout(() => {
-        const known = KNOWN_EMAILS.includes(email.trim().toLowerCase())
-        setError({ field: '', message: '' })
-        setStep(known ? 'password' : 'details')
-        setIsReturning(known)
-      }, 350)
+      setSubmitting(true)
+      checkEmail(email.trim())
+        .then((exists) => {
+          setError({ field: '', message: '' })
+          setStep(exists ? 'password' : 'details')
+          setIsReturning(exists)
+        })
+        .catch((e) => setError({ field: 'email', message: errorMessage(e) }))
+        .finally(() => setSubmitting(false))
       return
     }
 
@@ -510,11 +523,25 @@ export default function Login({ onAuthenticated }: LoginProps) {
       n = (n + 1) % 4
       setDots('.'.repeat(n))
     }, 300)
-    setTimeout(() => {
-      clearInterval(dotsTimerRef.current)
-      setSubmitting(false)
-      setSuccess(true)
-    }, 900)
+    const request = isReturning
+      ? loginRequest({ email: email.trim(), password })
+      : signup({ email: email.trim(), password, name: name.trim() })
+
+    request
+      .then((session) => {
+        authedUserRef.current = session.user
+        setSuccess(true)
+      })
+      .catch((e) =>
+        setError({
+          field: isReturning ? 'password' : 'email',
+          message: errorMessage(e),
+        }),
+      )
+      .finally(() => {
+        clearInterval(dotsTimerRef.current)
+        setSubmitting(false)
+      })
   }
 
   const quote = QUOTES[quoteIndex]

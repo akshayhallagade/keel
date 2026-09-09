@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
+import type { User } from '@keel/types'
 import LogoMark from '../../components/LogoMark'
+import type { UpdateProfileInput } from '@keel/validation'
+import { updateMe } from '../../api/users'
 import './Onboarding.css'
 
 interface Question {
@@ -113,13 +116,26 @@ const QUESTIONS: Question[] = [
   },
 ]
 
+/// Question ids in QUESTIONS map to the user columns the API expects.
+const FIELD_FOR_QUESTION: Record<string, keyof UpdateProfileInput> = {
+  role: 'occupation',
+  living: 'livingSituation',
+  money: 'moneyHabits',
+  invest: 'investing',
+  organized: 'organization',
+  hobbies: 'hobbyInterest',
+  reminders: 'reminderStyle',
+  goal: 'primaryGoal',
+}
+
 interface OnboardingProps {
-  onComplete?: (answers: Record<string, string>) => void
+  onComplete?: (user: User) => void
 }
 
 export default function Onboarding({ onComplete }: OnboardingProps) {
   const [step, setStep] = useState(1)
   const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [saving, setSaving] = useState(false)
 
   const wipeRef = useRef<HTMLDivElement>(null)
   const bodyRef = useRef<HTMLDivElement>(null)
@@ -190,7 +206,30 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     prevStepRef.current = step
   }, [step])
 
+  const [saveError, setSaveError] = useState('')
+
   const finish = () => {
+    if (saving) return
+    setSaving(true)
+    setSaveError('')
+
+    const payload: UpdateProfileInput = { completeOnboarding: true }
+    for (const [questionId, value] of Object.entries(answers)) {
+      const field = FIELD_FOR_QUESTION[questionId]
+      if (field) payload[field] = value as never
+    }
+
+    updateMe(payload)
+      .then(runFinishAnimation)
+      .catch(() => {
+        // Keep the user on the last question rather than dropping them into a
+        // half-onboarded home screen.
+        setSaveError('Could not save your answers. Check your connection.')
+      })
+      .finally(() => setSaving(false))
+  }
+
+  const runFinishAnimation = (user: User) => {
     gsap
       .timeline()
       .to(nextBtnRef.current, {
@@ -206,7 +245,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         duration: 0.4,
         ease: 'power2.in',
       })
-      .call(() => onComplete?.(answers))
+      .call(() => onComplete?.(user))
   }
 
   const back = () => {
@@ -280,6 +319,20 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             })}
           </div>
 
+          {saveError && (
+            <div
+              role="alert"
+              style={{
+                color: '#C64F3B',
+                font: '500 11px "IBM Plex Mono",monospace',
+                letterSpacing: '.06em',
+                marginBottom: 12,
+              }}
+            >
+              {saveError}
+            </div>
+          )}
+
           <div className="ob-nav">
             <button
               type="button"
@@ -301,9 +354,14 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 className="ob-next"
                 ref={nextBtnRef}
                 onClick={next}
-                style={{ opacity: picked ? 1 : 0.5 }}
+                disabled={saving}
+                style={{ opacity: picked && !saving ? 1 : 0.5 }}
               >
-                {step === QUESTIONS.length ? 'ENTER KEEL →' : 'CONTINUE →'}
+                {saving
+                  ? 'SAVING…'
+                  : step === QUESTIONS.length
+                    ? 'ENTER KEEL →'
+                    : 'CONTINUE →'}
               </button>
             </div>
           </div>

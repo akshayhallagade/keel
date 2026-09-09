@@ -1,43 +1,18 @@
 import { prisma } from './client'
 
+// bcrypt hash of "password123" — precomputed so @keel/db needs no bcrypt dependency.
+const DEMO_PASSWORD_HASH =
+  '$2a$10$NwU1pw0AijSpK1GLBVOE1eQ5D3KeJ2O3eI/dk/6/te/Vw2to8P2HW'
+
 async function main() {
-  const user = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email: 'demo@keel.app' },
     update: {},
     create: {
       email: 'demo@keel.app',
       name: 'Demo User',
-      passwordHash: 'replace-with-real-hash',
+      passwordHash: DEMO_PASSWORD_HASH,
     },
-  })
-
-  const workTag = await prisma.tag.upsert({
-    where: { userId_name: { userId: user.id, name: 'work' } },
-    update: {},
-    create: { userId: user.id, name: 'work' },
-  })
-  const lifeTag = await prisma.tag.upsert({
-    where: { userId_name: { userId: user.id, name: 'life' } },
-    update: {},
-    create: { userId: user.id, name: 'life' },
-  })
-
-  await prisma.todo.createMany({
-    data: [
-      {
-        userId: user.id,
-        text: 'Write project brief',
-        tagId: workTag.id,
-        group: 'TODAY',
-        starred: true,
-      },
-      {
-        userId: user.id,
-        text: 'Book dentist appointment',
-        tagId: lifeTag.id,
-        group: 'THIS_WEEK',
-      },
-    ],
   })
 }
 

@@ -21,12 +21,18 @@ export const authService = {
     return { user, accessToken: signAccessToken(user.id) }
   },
 
+  async emailExists(email: string) {
+    return (await userRepository.findByEmail(email)) !== null
+  },
+
   async login(input: LoginInput) {
     const user = await userRepository.findByEmail(input.email)
     if (!user) throw new AuthError('Invalid email or password')
 
     const valid = await verifyPassword(input.password, user.passwordHash)
     if (!valid) throw new AuthError('Invalid email or password')
+
+    await userRepository.touchLastLogin(user.id)
 
     return { user, accessToken: signAccessToken(user.id) }
   },

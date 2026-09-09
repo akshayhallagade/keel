@@ -137,6 +137,7 @@ export default function Settings({ vm }: { vm: HomeState }) {
         <div style={{ display: 'flex', gap: 10, marginTop: 26 }}>
           <button
             type="button"
+            onClick={vm.onSignOut}
             style={{
               border: '1px solid var(--line)',
               color: 'var(--text-2)',

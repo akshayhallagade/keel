@@ -7,6 +7,8 @@ vi.mock('../src/repositories/user.repository', () => ({
   },
 }))
 
+import { signupSchema } from '@keel/validation'
+
 import { authService, AuthError } from '../src/services/auth.service'
 import { userRepository } from '../src/repositories/user.repository'
 
@@ -32,5 +34,16 @@ describe('authService.signup', () => {
         name: 'Demo',
       }),
     ).rejects.toBeInstanceOf(AuthError)
+  })
+})
+
+describe('email normalisation', () => {
+  it('lowercases and trims so casing cannot create a duplicate account', () => {
+    const parsed = signupSchema.parse({
+      email: '  Demo@Keel.App ',
+      password: 'password123',
+      name: 'Demo',
+    })
+    expect(parsed.email).toBe('demo@keel.app')
   })
 })

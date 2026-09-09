@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { User } from '@keel/types'
 import {
   ACCENTS,
   DOT_COLORS,
@@ -7,7 +8,6 @@ import {
   SEED_DONE,
   SEED_HOBBIES,
   SEED_HOBBY_TRY,
-  SEED_PROFILE,
   SEED_PROJECTS,
   SEED_ROUTINES,
   SEED_TODOS,
@@ -93,7 +93,7 @@ const parseRTime = (str: string) => {
   return { hour, minIdx: idx, ampm: m[3].toUpperCase() as 'AM' | 'PM' }
 }
 
-export function useHomeState() {
+export function useHomeState(user: User, onSignOut: () => void) {
   const [screen, setScreen] = useState<Screen>('today')
   const [draft, setDraft] = useState('')
   const [todoPanel, setTodoPanel] = useState<TodoPanelState | null>(null)
@@ -112,7 +112,10 @@ export function useHomeState() {
   const [mode, setModeState] = useState<'light' | 'dark'>(() =>
     localStorage.getItem('msb-mode') === 'dark' ? 'dark' : 'light',
   )
-  const [profile, setProfile] = useState<Profile>(SEED_PROFILE)
+  const [profile, setProfile] = useState<Profile>({
+    name: user.name,
+    email: user.email,
+  })
   const [prefs, setPrefs] = useState<Prefs>({
     quote: true,
     digest: true,
@@ -813,6 +816,7 @@ export function useHomeState() {
     // core
     screen,
     go,
+    onSignOut,
     accent,
     setAccent,
     mode,

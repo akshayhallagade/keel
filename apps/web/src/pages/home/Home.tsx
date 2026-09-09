@@ -17,11 +17,18 @@ import {
   ProjectPanel,
   ConfirmDeleteModal,
 } from './panels/Panels'
+import type { User } from '@keel/types'
 import { useHomeState } from './useHomeState'
 import './Home.css'
 
-export default function Home() {
-  const vm = useHomeState()
+export default function Home({
+  user,
+  onSignOut,
+}: {
+  user: User
+  onSignOut: () => void
+}) {
+  const vm = useHomeState(user, onSignOut)
 
   return (
     <div

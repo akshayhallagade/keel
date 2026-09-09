@@ -10,183 +10,56 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String @id @default(cuid())
+  email        String @unique
   passwordHash String
   name         String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
 
-  sessions  Session[]
-  tags      Tag[]
-  todos     Todo[]
-  projects  Project[]
-  routines  Routine[]
-  reminders Reminder[]
+  // --- Onboarding answers ---
+  // Stored as free text, not enums: the option lists are product copy that changes
+  // often, and an enum change costs a migration every time. Answer ids map 1:1 to
+  // QUESTIONS in apps/web/src/pages/onboarding/Onboarding.tsx.
+  // Note: this is the user's job situation, NOT a permission level — hence
+  // "occupation", so `role` stays free if access control ever lands.
+  occupation      String? // "Working professional", "Student", ...
+  livingSituation String? // "Living alone", "With family", ...
+  moneyHabits     String? // "I track every rupee", ...
+  investing       String? // "Yes, actively", "Just PF / basic savings", ...
+  organization    String? // "Pretty on top of things", ...
+  hobbyInterest   String? // "Reading", "Fitness / wellness", ...
+  reminderStyle   String? // "Frequent nudges", "One daily summary", ...
+  primaryGoal     String? // "Get my finances in order", ...
+
+  /// Null until onboarding is finished — this is what decides login -> onboarding vs login -> home.
+  onboardedAt DateTime?
+
+  // --- Account ---
+  /// IANA zone name. The morning digest, due-date alerts and SIP reminders all
+  /// fire at a wall-clock time, so none of them are correct without this.
+  timezone String @default("Asia/Kolkata")
+
+  /// Null until the address is confirmed. The column lands ahead of the verify
+  /// flow because "who confirmed, and when" cannot be backfilled afterwards.
+  emailVerifiedAt DateTime?
+
+  /// Set on each successful login. Cheapest possible usage signal.
+  lastLoginAt DateTime?
+
+  /// Access tokens issued before this instant are rejected, so changing a password
+  /// kicks out anyone holding a stolen 7-day token instead of waiting it out.
+  passwordChangedAt DateTime @default(now())
+
+  // --- Preferences ---
+  accent     String  @default("#C64F3B") // hex, one of ACCENTS in seedData.ts
+  theme      String  @default("light") // "light" | "dark"
+  weekStart  String  @default("MON") @db.VarChar(3)
+  prefQuote  Boolean @default(true) // daily resurfaced quote on Today
+  prefDigest Boolean @default(true) // morning digest email
+  prefAlerts Boolean @default(true) // due-date push alerts
+  prefSip    Boolean @default(false) // SIP reminders
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("users")
-}
-
-model Session {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@map("sessions")
-}
-
-/// A user-defined label used to color-code and filter todos/projects (e.g. "work", "life").
-model Tag {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name   String
-  color  String?
-
-  todos    Todo[]
-  projects Project[]
-
-  @@unique([userId, name])
-  @@map("tags")
-}
-
-enum TodoGroup {
-  TODAY
-  THIS_WEEK
-  SOMEDAY
-}
-
-enum RecurrenceFrequency {
-  NONE
-  DAILY
-  WEEKLY
-  MONTHLY
-  YEARLY
-}
-
-model Todo {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  text  String
-  tagId String?
-  tag   Tag?    @relation(fields: [tagId], references: [id], onDelete: SetNull)
-
-  group     TodoGroup @default(TODAY)
-  due       DateTime?
-  recurrence RecurrenceFrequency @default(NONE)
-
-  starred     Boolean   @default(false)
-  order       Int       @default(0)
-  completedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  reminders Reminder[]
-
-  @@index([userId, group])
-  @@index([userId, tagId])
-  @@index([userId, completedAt])
-  @@map("todos")
-}
-
-model Project {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  name  String
-  tagId String?
-  tag   Tag?    @relation(fields: [tagId], references: [id], onDelete: SetNull)
-
-  paused Boolean @default(false)
-  pinned Boolean @default(false)
-  order  Int     @default(0)
-
-  tasks ProjectTask[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@map("projects")
-}
-
-model ProjectTask {
-  id        String  @id @default(cuid())
-  projectId String
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  text  String
-  done  Boolean @default(false)
-  order Int     @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([projectId])
-  @@map("project_tasks")
-}
-
-enum RoutinePeriod {
-  WAKE_UP
-  MORNING
-  AFTERNOON
-  EVENING
-  BEDTIME
-}
-
-model Routine {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  name   String
-  period RoutinePeriod
-  time   String @db.VarChar(5) // "HH:mm", 24-hour
-  streak Int    @default(0)
-
-  completions RoutineCompletion[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@map("routines")
-}
-
-/// One row per calendar day a routine was tracked, replacing an ad-hoc boolean[] blob
-/// so history/streaks can be queried and extended (e.g. past a single week) directly in SQL.
-model RoutineCompletion {
-  id        String   @id @default(cuid())
-  routineId String
-  routine   Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
-  date      DateTime @db.Date
-  done      Boolean  @default(false)
-  missed    Boolean  @default(false)
-
-  @@unique([routineId, date])
-  @@map("routine_completions")
-}
-
-model Reminder {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  todoId String?
-  todo   Todo?   @relation(fields: [todoId], references: [id], onDelete: Cascade)
-
-  text     String
-  remindAt DateTime
-
-  createdAt DateTime @default(now())
-
-  @@index([userId, remindAt])
-  @@map("reminders")
 }
