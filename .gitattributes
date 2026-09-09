@@ -6,3 +6,4 @@
 *.gif binary
 *.svg binary
 *.ico binary
+graphify-out/graph.json merge=graphify
