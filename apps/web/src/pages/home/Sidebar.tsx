@@ -1,5 +1,6 @@
 import LogoMark from '../../components/LogoMark'
-import { initialsOf, type HomeState } from './useHomeState'
+import type { HomeState } from './useHomeState'
+import { initialsOf } from './state/helpers'
 import type { Screen } from './types'
 
 const NAV_SECTIONS: {

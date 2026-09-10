@@ -1,5 +1,40 @@
 import type { HomeState } from '../useHomeState'
 
+type ProjectModel = HomeState['activeProjects'][number]
+
+/**
+ * "Next: <task>" with a checkbox that ticks it off. When every task is done it
+ * reads as complete instead. Both project card layouts show this; `truncate`
+ * is the only thing that differs between them.
+ */
+function NextTask({
+  p,
+  truncate,
+}: {
+  p: Pick<ProjectModel, 'allDone' | 'completeNext' | 'nextLabel'>
+  truncate?: boolean
+}) {
+  return (
+    <>
+      <button
+        type="button"
+        className={`hs-checkbox${p.allDone ? ' is-checked' : ''}`}
+        onClick={p.completeNext}
+        aria-label="Complete the next task"
+      >
+        {p.allDone ? '✓' : ''}
+      </button>
+      <div
+        className={`hs-next-task${p.allDone ? ' is-done' : ''}${
+          truncate ? ' is-truncated' : ''
+        }`}
+      >
+        {p.nextLabel}
+      </div>
+    </>
+  )
+}
+
 export default function Projects({ vm }: { vm: HomeState }) {
   const {
     activeProjects,
@@ -108,26 +143,7 @@ export default function Projects({ vm }: { vm: HomeState }) {
                   gap: 10,
                 }}
               >
-                <button
-                  type="button"
-                  className="hs-checkbox"
-                  style={{
-                    borderColor: pp.nextBoxBorder,
-                    background: pp.nextBoxBg,
-                  }}
-                  onClick={pp.completeNext}
-                >
-                  {pp.nextCheck}
-                </button>
-                <div
-                  style={{
-                    fontSize: 13,
-                    color: pp.nextColor,
-                    textDecoration: pp.nextDeco,
-                  }}
-                >
-                  {pp.nextLabel}
-                </div>
+                <NextTask p={pp} />
               </div>
               <div style={{ marginTop: 'auto', paddingTop: 14 }}>
                 <div
@@ -189,7 +205,7 @@ export default function Projects({ vm }: { vm: HomeState }) {
                     className="hs-row-action"
                     onClick={pp.toggleExpand}
                   >
-                    {pp.chevron}
+                    {pp.expanded ? '▴' : '▾'}
                   </button>
                 </div>
                 {pp.expanded && (
@@ -348,29 +364,7 @@ export default function Projects({ vm }: { vm: HomeState }) {
                   minWidth: 0,
                 }}
               >
-                <button
-                  type="button"
-                  className="hs-checkbox"
-                  style={{
-                    borderColor: pj.nextBoxBorder,
-                    background: pj.nextBoxBg,
-                  }}
-                  onClick={pj.completeNext}
-                >
-                  {pj.nextCheck}
-                </button>
-                <div
-                  style={{
-                    fontSize: 13,
-                    color: pj.nextColor,
-                    textDecoration: pj.nextDeco,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {pj.nextLabel}
-                </div>
+                <NextTask p={pj} truncate />
               </div>
               <div
                 style={{
@@ -400,7 +394,7 @@ export default function Projects({ vm }: { vm: HomeState }) {
                   className="hs-row-action"
                   onClick={pj.toggleExpand}
                 >
-                  {pj.chevron}
+                  {pj.expanded ? '▴' : '▾'}
                 </button>
               </div>
             </div>

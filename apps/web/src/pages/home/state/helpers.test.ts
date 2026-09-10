@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { fmtDue, isISO, isoOf, parseInr, parseRTime } from './useHomeState'
+import { fmtDue, isISO, isoOf, parseInr, parseRTime } from './helpers'
 
 describe('isISO', () => {
   it('accepts a full yyyy-mm-dd date', () => {

@@ -1,5 +1,6 @@
 import { ACCENTS } from '../seedData'
-import { initialsOf, type HomeState } from '../useHomeState'
+import type { HomeState } from '../useHomeState'
+import { initialsOf } from '../state/helpers'
 import Chip from '../../../components/Chip'
 
 const PREF_DEFS = [

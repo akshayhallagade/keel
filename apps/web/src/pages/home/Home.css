@@ -530,6 +530,21 @@
   opacity: 1;
 }
 
+/* ---------- Projects ---------- */
+.hs-next-task {
+  font-size: 13px;
+  color: var(--ink);
+}
+.hs-next-task.is-done {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.hs-next-task.is-truncated {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ---------- Hobbies ---------- */
 .hs-hobby-row {
   display: flex;
