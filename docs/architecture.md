@@ -8,9 +8,7 @@ keel/
 ├── backend/api      Express REST API (routes → controllers → services → repositories → db)
 ├── backend/db        Prisma schema, migrations, seed script — the only package that imports the ORM directly
 ├── packages/types      Shared TypeScript interfaces (User, AuthSession, ...)
-├── packages/validation Shared Zod schemas, used for both form validation (web) and request validation (api)
-├── packages/utils        Cross-cutting helpers shared by web and api
-└── packages/design-system  Design tokens (colors, fonts) mirrored from apps/web/src/index.css
+└── packages/validation Shared Zod schemas, used for both form validation (web) and request validation (api)
 ```
 
 ## Request flow (backend/api)
@@ -30,8 +28,13 @@ stores the token in `localStorage` (see `apps/web/src/api/client.ts`) and sends 
 
 Each runnable package has its own `.env.example`:
 
-- `backend/api/.env.example` — `PORT`, `DATABASE_URL`, `JWT_SECRET`, `WEB_ORIGIN`
-- `backend/db/.env.example` — `DATABASE_URL` (read directly by the Prisma CLI)
+- `backend/api/.env.example` — `PORT`, `JWT_SECRET`, `WEB_ORIGIN`
+- `backend/db/.env.example` — `DATABASE_URL`
 - `apps/web/.env.example` — `VITE_API_URL`
+
+`DATABASE_URL` is set once, in `backend/db/.env`. Both the Prisma CLI
+(`backend/db/prisma.config.ts`) and the API (`backend/api/src/config/env.ts`)
+read it from there, so a migration and the running server cannot end up
+pointed at different databases.
 
 Copy each to `.env` in the same directory before running `pnpm dev:api` / `pnpm dev:web` / `pnpm db:migrate`.
