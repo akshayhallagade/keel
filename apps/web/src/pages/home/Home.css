@@ -1565,6 +1565,23 @@ body:has(.hs-splash) {
 }
 
 /* ---------- Settings ---------- */
+.hs-save-error {
+  font: 500 11px var(--mono);
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  border-left: 3px solid var(--accent);
+  padding: 10px 12px;
+  margin-bottom: 20px;
+  background: var(--input-bg);
+}
+.hs-field-note {
+  font: 400 10px var(--mono);
+  color: var(--muted);
+}
+.hs-field-input[readonly] {
+  color: var(--text-3);
+  cursor: default;
+}
 .hs-profile-edit {
   display: flex;
   gap: 18px;

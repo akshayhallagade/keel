@@ -69,6 +69,7 @@ export default function Settings({ vm }: { vm: HomeState }) {
     setPrefs,
     weekStart,
     setWeekStart,
+    settingsError,
   } = vm
 
   const initials = initialsOf(profile.name)
@@ -81,6 +82,15 @@ export default function Settings({ vm }: { vm: HomeState }) {
         <div className="hs-meta" style={{ marginBottom: 26 }}>
           ACCOUNT &amp; PREFERENCES
         </div>
+
+        {/* Changes apply here immediately and save in the background. If that
+            save fails, the screen is showing something the server does not
+            have, and staying quiet about it would be the wrong call. */}
+        {settingsError && (
+          <div role="alert" className="hs-save-error">
+            {settingsError}
+          </div>
+        )}
 
         <div className="hs-section-label">PROFILE</div>
         <div className="hs-profile-edit">
@@ -101,15 +111,21 @@ export default function Settings({ vm }: { vm: HomeState }) {
                 }
               />
             </div>
+            {/* Read-only on purpose: changing the address has to go through a
+                verification flow that does not exist yet, and the API refuses
+                `email` outright. An editable box here only promised something
+                nothing would deliver. */}
             <div className="hs-panel-field">
               <div className="hs-field-label">EMAIL</div>
               <input
                 className="hs-field-input is-mono-plain"
                 value={profile.email}
-                onChange={(e) =>
-                  setProfile((p) => ({ ...p, email: e.target.value }))
-                }
+                readOnly
+                aria-describedby="email-readonly-note"
               />
+              <div id="email-readonly-note" className="hs-field-note">
+                Contact support to change your email.
+              </div>
             </div>
           </div>
         </div>

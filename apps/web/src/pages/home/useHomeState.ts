@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { User } from '@keel/types'
-import type { ConfirmDeleteState, Prefs, Profile, Screen } from './types'
+import type { ConfirmDeleteState, Screen } from './types'
 import { prefersReducedMotion } from '../../lib/motion'
 import { useTodos } from './state/useTodos'
 import { useRoutines } from './state/useRoutines'
 import { useProjects } from './state/useProjects'
 import { useAlarms } from './state/useAlarms'
 import { useHobbies } from './state/useHobbies'
+import { useSettings } from './state/useSettings'
 import { useCreatePanel } from './state/useCreatePanel'
 
 /// How long the splash sits before the app appears. Matches the splashOut
@@ -29,23 +30,10 @@ export function useHomeState(user: User, onSignOut: () => void) {
   const [splash, setSplash] = useState(true)
   const [countProg, setCountProg] = useState(1)
 
-  const [accent, setAccentState] = useState(
-    () => localStorage.getItem('msb-accent') || '#C64F3B',
-  )
-  const [mode, setModeState] = useState<'light' | 'dark'>(() =>
-    localStorage.getItem('msb-mode') === 'dark' ? 'dark' : 'light',
-  )
-  const [profile, setProfile] = useState<Profile>({
-    name: user.name,
-    email: user.email,
-  })
-  const [prefs, setPrefs] = useState<Prefs>({
-    quote: true,
-    digest: true,
-    alerts: true,
-    sip: false,
-  })
-  const [weekStart, setWeekStart] = useState('MON')
+  /// Appearance, profile and preferences all come from the signed-in user and
+  /// save back to the API. They used to sit in localStorage and in hardcoded
+  /// defaults, which meant they were per-browser at best and forgotten at worst.
+  const settings = useSettings(user)
 
   /// Deleting is the one action shared across domains — a project and a
   /// routine both route through the same confirm modal — so the pending
@@ -98,16 +86,6 @@ export function useHomeState(user: User, onSignOut: () => void) {
     [startCount],
   )
 
-  const setAccent = useCallback((hex: string) => {
-    localStorage.setItem('msb-accent', hex)
-    setAccentState(hex)
-  }, [])
-
-  const setMode = useCallback((m: 'light' | 'dark') => {
-    localStorage.setItem('msb-mode', m)
-    setModeState(m)
-  }, [])
-
   const todos = useTodos()
   const routines = useRoutines(askDelete)
   const projects = useProjects(askDelete, go)
@@ -136,18 +114,10 @@ export function useHomeState(user: User, onSignOut: () => void) {
     setScreen,
     go,
     onSignOut,
-    accent,
-    setAccent,
-    mode,
-    setMode,
     splash,
     countProg,
-    profile,
-    setProfile,
-    prefs,
-    setPrefs,
-    weekStart,
-    setWeekStart,
+    // appearance, profile and preferences
+    ...settings,
     // shared delete confirmation
     confirmDel,
     setConfirmDel,
