@@ -2,14 +2,14 @@ import type { SignupInput, LoginInput } from '@keel/validation'
 import { userRepository } from '../repositories/user.repository'
 import { hashPassword, verifyPassword } from '../lib/hash'
 import { signAccessToken } from '../lib/jwt'
-
-export class AuthError extends Error {}
+import { AuthError, ConflictError } from '../lib/httpError'
 
 export const authService = {
   async signup(input: SignupInput) {
     const existing = await userRepository.findByEmail(input.email)
+    // 409, not 401: nothing is wrong with who they are, the address is taken.
     if (existing)
-      throw new AuthError('An account with this email already exists')
+      throw new ConflictError('An account with this email already exists')
 
     const passwordHash = await hashPassword(input.password)
     const user = await userRepository.create({

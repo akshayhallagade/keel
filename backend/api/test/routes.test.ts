@@ -161,10 +161,10 @@ describe('POST /auth/signup', () => {
       body: { email: 'demo@keel.app', password: 'password123', name: 'Demo' },
     })
 
-    // 401, because errorMiddleware maps every AuthError that way. 409 Conflict would
-    // describe this better; this test pins today's behaviour so that change is a
-    // deliberate one rather than an accident.
-    expect(res.status).toBe(401)
+    // 409, not 401: nothing is wrong with who they are, the address is taken.
+    // A 401 here would tell the client to go and re-authenticate, which cannot
+    // help.
+    expect(res.status).toBe(409)
     expect(userRepository.create).not.toHaveBeenCalled()
   })
 

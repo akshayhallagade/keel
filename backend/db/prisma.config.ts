@@ -3,7 +3,14 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig, env } from 'prisma/config'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
-process.loadEnvFile(path.join(dirname, '.env'))
+
+// Absent is fine, and must be: CI and any deployed host inject DATABASE_URL
+// directly and have no .env file at all. Unguarded, this threw there.
+try {
+  process.loadEnvFile(path.join(dirname, '.env'))
+} catch {
+  // No local .env — fall through to whatever the environment already provides.
+}
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',

@@ -9,7 +9,8 @@ vi.mock('../src/repositories/user.repository', () => ({
 
 import { signupSchema } from '@keel/validation'
 
-import { authService, AuthError } from '../src/services/auth.service'
+import { authService } from '../src/services/auth.service'
+import { ConflictError } from '../src/lib/httpError'
 import { userRepository } from '../src/repositories/user.repository'
 
 describe('authService.signup', () => {
@@ -33,7 +34,7 @@ describe('authService.signup', () => {
         password: 'password123',
         name: 'Demo',
       }),
-    ).rejects.toBeInstanceOf(AuthError)
+    ).rejects.toBeInstanceOf(ConflictError)
   })
 })
 
