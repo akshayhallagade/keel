@@ -1,8 +1,11 @@
 import { useEffect, useRef } from 'react'
 import gsap from 'gsap'
+import { FULL_MOTION, prefersReducedMotion } from '../../lib/motion'
 
 /// How long the progress bar takes to fill before continuing on its own.
 const AUTO_CONTINUE_S = 2.4
+/// Plus the beat before it starts moving.
+const AUTO_CONTINUE_DELAY_S = 0.5
 
 /**
  * What replaces the form once the user is signed in: a checkmark that draws
@@ -36,65 +39,84 @@ export default function SuccessView({
   })
 
   useEffect(() => {
-    const path = checkPathRef.current
-    if (path) {
-      // Hide the tick by offsetting its dash by its own length, then animate
-      // the offset to zero so it appears to be drawn.
-      const len = path.getTotalLength()
-      gsap.set(path, { strokeDasharray: len, strokeDashoffset: len })
-    }
+    const mm = gsap.matchMedia()
 
-    const tl = gsap
-      .timeline()
-      .fromTo(
-        markRef.current,
-        { scale: 0, opacity: 0 },
-        { scale: 1, opacity: 1, duration: 0.35, ease: 'power2.out' },
-      )
-      .to(
-        path,
-        { strokeDashoffset: 0, duration: 0.35, ease: 'power2.out' },
-        0.1,
-      )
-      .to(
-        ringRef.current,
-        { scale: 1.4, opacity: 0, duration: 0.6, ease: 'power2.out' },
-        0.25,
-      )
-      .fromTo(
-        headRef.current,
-        { opacity: 0, y: 6 },
-        { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' },
-        0.3,
-      )
-      .fromTo(
-        subRef.current,
-        { opacity: 0, y: 6 },
-        { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' },
-        0.38,
-      )
-      .fromTo(
-        ctaRef.current,
-        { opacity: 0, y: 6 },
-        { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' },
-        0.46,
+    mm.add(FULL_MOTION, () => {
+      const path = checkPathRef.current
+      if (path) {
+        // Hide the tick by offsetting its dash by its own length, then animate
+        // the offset to zero so it appears to be drawn.
+        const len = path.getTotalLength()
+        gsap.set(path, { strokeDasharray: len, strokeDashoffset: len })
+      }
+
+      const tl = gsap
+        .timeline()
+        .fromTo(
+          markRef.current,
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.35, ease: 'power2.out' },
+        )
+        .to(
+          path,
+          { strokeDashoffset: 0, duration: 0.35, ease: 'power2.out' },
+          0.1,
+        )
+        .to(
+          ringRef.current,
+          { scale: 1.4, opacity: 0, duration: 0.6, ease: 'power2.out' },
+          0.25,
+        )
+        .fromTo(
+          headRef.current,
+          { opacity: 0, y: 6 },
+          { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' },
+          0.3,
+        )
+        .fromTo(
+          subRef.current,
+          { opacity: 0, y: 6 },
+          { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' },
+          0.38,
+        )
+        .fromTo(
+          ctaRef.current,
+          { opacity: 0, y: 6 },
+          { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' },
+          0.46,
+        )
+
+      const bar = gsap.fromTo(
+        progressRef.current,
+        { width: '0%' },
+        {
+          width: '100%',
+          duration: AUTO_CONTINUE_S,
+          ease: 'none',
+          delay: AUTO_CONTINUE_DELAY_S,
+          onComplete: () => onContinueRef.current(),
+        },
       )
 
-    const bar = gsap.fromTo(
-      progressRef.current,
-      { width: '0%' },
-      {
-        width: '100%',
-        duration: AUTO_CONTINUE_S,
-        ease: 'none',
-        delay: 0.5,
-        onComplete: () => onContinueRef.current(),
-      },
+      return () => {
+        tl.kill()
+        bar.kill()
+      }
+    })
+
+    // The bar is not decoration — finishing it is what carries the user into
+    // the app. Without motion it does not creep, but the wait and the handoff
+    // still have to happen, so a plain timer stands in for the tween.
+    if (!prefersReducedMotion()) return () => mm.revert()
+
+    gsap.set(progressRef.current, { width: '100%' })
+    const timer = setTimeout(
+      () => onContinueRef.current(),
+      (AUTO_CONTINUE_DELAY_S + AUTO_CONTINUE_S) * 1000,
     )
-
     return () => {
-      tl.kill()
-      bar.kill()
+      clearTimeout(timer)
+      mm.revert()
     }
   }, [])
 

@@ -4,6 +4,7 @@ import type { User } from '@keel/types'
 import LogoMark from '../../components/LogoMark'
 import type { UpdateProfileInput } from '@keel/validation'
 import { updateMe } from '../../api/users'
+import { FULL_MOTION, prefersReducedMotion } from '../../lib/motion'
 import './Onboarding.css'
 
 interface Question {
@@ -149,40 +150,54 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const question = QUESTIONS[step - 1]
   const picked = answers[question.id]
 
+  // Entrance and question-to-question transitions. Both are decoration: the
+  // question is readable either way, so reduced motion skips them and the
+  // elements render where they belong.
   useEffect(() => {
-    const tl = gsap.timeline()
-    tl.fromTo(
-      kickerRef.current,
-      { opacity: 0, y: 8 },
-      { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' },
-      0,
-    )
-      .fromTo(
-        headlineRef.current,
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' },
-        0.08,
-      )
-      .fromTo(
-        subRef.current,
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' },
-        0.15,
-      )
-      .fromTo(
-        optionsRef.current ? Array.from(optionsRef.current.children) : [],
-        { opacity: 0, y: 12 },
-        { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out', stagger: 0.05 },
-        0.22,
-      )
-    return () => {
-      tl.kill()
-    }
+    const mm = gsap.matchMedia()
+    mm.add(FULL_MOTION, () => {
+      const tl = gsap
+        .timeline()
+        .fromTo(
+          kickerRef.current,
+          { opacity: 0, y: 8 },
+          { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' },
+          0,
+        )
+        .fromTo(
+          headlineRef.current,
+          { opacity: 0, y: 10 },
+          { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' },
+          0.08,
+        )
+        .fromTo(
+          subRef.current,
+          { opacity: 0, y: 10 },
+          { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' },
+          0.15,
+        )
+        .fromTo(
+          optionsRef.current ? Array.from(optionsRef.current.children) : [],
+          { opacity: 0, y: 12 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.35,
+            ease: 'power2.out',
+            stagger: 0.05,
+          },
+          0.22,
+        )
+      return () => {
+        tl.kill()
+      }
+    })
+    return () => mm.revert()
   }, [])
 
   useEffect(() => {
     const prev = prevStepRef.current
-    if (prev !== step) {
+    if (prev !== step && !prefersReducedMotion()) {
       const dir = step > prev ? 1 : -1
       gsap.fromTo(
         bodyRef.current,
@@ -229,7 +244,16 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       .finally(() => setSaving(false))
   }
 
+  /// Covers the handoff into the app. The wipe is decoration but the `call` at
+  /// the end is not — skipping the timeline outright would strand the user on
+  /// the last question after their answers had already saved.
   const runFinishAnimation = (user: User) => {
+    if (prefersReducedMotion()) {
+      gsap.set(wipeRef.current, { opacity: 1, pointerEvents: 'auto' })
+      onComplete?.(user)
+      return
+    }
+
     gsap
       .timeline()
       .to(nextBtnRef.current, {

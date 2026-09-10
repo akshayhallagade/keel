@@ -7,6 +7,7 @@ import SuccessView from './SuccessView'
 import RevealToggle from '../../components/RevealToggle'
 import { checkEmail, login as loginRequest, signup } from '../../api/auth'
 import { ApiError } from '../../api/client'
+import { FULL_MOTION, prefersReducedMotion } from '../../lib/motion'
 import './Login.css'
 
 type Step = 'email' | 'password' | 'details'
@@ -107,6 +108,17 @@ export default function Login({ onAuthenticated }: LoginProps) {
   const doContinueRef = useRef(() => {})
   useEffect(() => {
     doContinueRef.current = () => {
+      const handOff = () => {
+        if (authedUserRef.current) onAuthenticated?.(authedUserRef.current)
+      }
+      // The wipe covers the swap to the next screen, but the handoff is the
+      // point of it — so without motion the wipe is set rather than tweened and
+      // the callback still runs.
+      if (prefersReducedMotion()) {
+        gsap.set(wipeRef.current, { opacity: 1, pointerEvents: 'auto' })
+        handOff()
+        return
+      }
       gsap
         .timeline()
         .to(wipeRef.current, {
@@ -115,9 +127,7 @@ export default function Login({ onAuthenticated }: LoginProps) {
           duration: 0.3,
           ease: 'power2.in',
         })
-        .call(() => {
-          if (authedUserRef.current) onAuthenticated?.(authedUserRef.current)
-        })
+        .call(handOff)
     }
   }, [onAuthenticated])
 
@@ -133,37 +143,50 @@ export default function Login({ onAuthenticated }: LoginProps) {
 
   /// Entrance for the form side. BrandPanel runs its own timeline from the
   /// same mount, so the two halves still appear interleaved on one clock.
+  /// Decoration only — under reduced motion the form is simply there.
   useEffect(() => {
-    const tl = gsap
-      .timeline()
-      .fromTo(
-        headlineRef.current,
-        { opacity: 0, y: 8 },
-        { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' },
-        0.18,
-      )
-      .fromTo(
-        subheadRef.current,
-        { opacity: 0, y: 8 },
-        { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' },
-        0.23,
-      )
-      .fromTo(
-        fieldsRef.current ? Array.from(fieldsRef.current.children) : [],
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out', stagger: 0.06 },
-        0.3,
-      )
-      .fromTo(
-        submitBtnRef.current,
-        { opacity: 0, y: 8 },
-        { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' },
-        0.46,
-      )
+    const mm = gsap.matchMedia()
 
-    return () => {
-      tl.kill()
-    }
+    mm.add(FULL_MOTION, () => {
+      const tl = gsap
+        .timeline()
+        .fromTo(
+          headlineRef.current,
+          { opacity: 0, y: 8 },
+          { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' },
+          0.18,
+        )
+        .fromTo(
+          subheadRef.current,
+          { opacity: 0, y: 8 },
+          { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' },
+          0.23,
+        )
+        .fromTo(
+          fieldsRef.current ? Array.from(fieldsRef.current.children) : [],
+          { opacity: 0, y: 10 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.35,
+            ease: 'power2.out',
+            stagger: 0.06,
+          },
+          0.3,
+        )
+        .fromTo(
+          submitBtnRef.current,
+          { opacity: 0, y: 8 },
+          { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' },
+          0.46,
+        )
+
+      return () => {
+        tl.kill()
+      }
+    })
+
+    return () => mm.revert()
   }, [])
 
   // Step transitions: slide fields, reveal email chip, focus, idle nudge
@@ -171,78 +194,99 @@ export default function Login({ onAuthenticated }: LoginProps) {
     const prev = prevStepRef.current
     if (prev !== step) {
       const forward = prev === 'email' && step !== 'email'
-      const dir = forward ? 18 : -18
+      const reduced = prefersReducedMotion()
 
-      gsap.fromTo(
-        fieldsRef.current,
-        { opacity: 0, x: dir },
-        { opacity: 1, x: 0, duration: 0.32, ease: 'power2.out' },
-      )
-      gsap.fromTo(
-        [headlineRef.current, subheadRef.current],
-        { opacity: 0, x: dir },
-        { opacity: 1, x: 0, duration: 0.3, ease: 'power2.out' },
-      )
-
-      if (forward) {
-        gsap.fromTo(
-          emailCheckRef.current,
-          { opacity: 0, scale: 0.4 },
-          {
-            opacity: 1,
-            scale: 1,
-            duration: 0.3,
-            ease: 'power2.out',
-            delay: 0.1,
-          },
-        )
-      } else if (prev !== 'email' && step === 'email') {
+      // Moving to the email step is the one case that owes the user focus,
+      // whether or not anything slid to get there.
+      if (!forward && prev !== 'email' && step === 'email') {
         setTimeout(() => emailInputRef.current?.focus(), 150)
       }
 
-      if (step === 'details') {
-        setTimeout(() => {
-          if (nameInputRef.current) {
-            gsap.fromTo(
-              nameInputRef.current,
-              { scale: 1 },
-              {
-                scale: 1.02,
-                duration: 0.15,
-                yoyo: true,
-                repeat: 1,
-                ease: 'power2.out',
-              },
-            )
-          }
-        }, 250)
+      // The confirmed-email tick is opacity: 0 in CSS and only ever revealed by
+      // this animation, so without motion it has to be switched on directly or
+      // the chip reads as unconfirmed.
+      if (forward && reduced) {
+        gsap.set(emailCheckRef.current, { opacity: 1, scale: 1 })
       }
 
-      clearTimeout(idleTimerRef.current)
-      idleTimerRef.current = setTimeout(() => {
-        if (step !== 'email') return
-        gsap.to(submitPulseRef.current, {
-          opacity: 0.3,
-          scale: 1.08,
-          duration: 0.8,
-          ease: 'sine.inOut',
-          repeat: 2,
-          yoyo: true,
-          repeatDelay: 0.4,
-        })
-      }, 3000)
+      if (!reduced) {
+        const dir = forward ? 18 : -18
+
+        gsap.fromTo(
+          fieldsRef.current,
+          { opacity: 0, x: dir },
+          { opacity: 1, x: 0, duration: 0.32, ease: 'power2.out' },
+        )
+        gsap.fromTo(
+          [headlineRef.current, subheadRef.current],
+          { opacity: 0, x: dir },
+          { opacity: 1, x: 0, duration: 0.3, ease: 'power2.out' },
+        )
+
+        if (forward) {
+          gsap.fromTo(
+            emailCheckRef.current,
+            { opacity: 0, scale: 0.4 },
+            {
+              opacity: 1,
+              scale: 1,
+              duration: 0.3,
+              ease: 'power2.out',
+              delay: 0.1,
+            },
+          )
+        }
+
+        if (step === 'details') {
+          setTimeout(() => {
+            if (nameInputRef.current) {
+              gsap.fromTo(
+                nameInputRef.current,
+                { scale: 1 },
+                {
+                  scale: 1.02,
+                  duration: 0.15,
+                  yoyo: true,
+                  repeat: 1,
+                  ease: 'power2.out',
+                },
+              )
+            }
+          }, 250)
+        }
+
+        // Nudge the button if they stall on the email step.
+        clearTimeout(idleTimerRef.current)
+        idleTimerRef.current = setTimeout(() => {
+          if (step !== 'email') return
+          gsap.to(submitPulseRef.current, {
+            opacity: 0.3,
+            scale: 1.08,
+            duration: 0.8,
+            ease: 'sine.inOut',
+            repeat: 2,
+            yoyo: true,
+            repeatDelay: 0.4,
+          })
+        }, 3000)
+      }
     }
     prevStepRef.current = step
     return () => clearTimeout(idleTimerRef.current)
   }, [step])
 
   // Error toast + shake
+  //
+  // The shake only draws the eye — the message itself is what reports the
+  // problem, so reduced motion keeps the toast and drops the movement.
   useEffect(() => {
     if (!error.message) return
+    const reduced = prefersReducedMotion()
+
     const target = error.field
       ? fieldRefForError[error.field].current
       : fieldsRef.current
-    if (target) {
+    if (target && !reduced) {
       gsap.fromTo(
         target,
         { x: 0 },
@@ -256,11 +300,15 @@ export default function Login({ onAuthenticated }: LoginProps) {
         },
       )
     }
-    gsap.fromTo(
-      toastRef.current,
-      { opacity: 0, x: 16 },
-      { opacity: 1, x: 0, duration: 0.25, ease: 'power2.out' },
-    )
+    if (reduced) {
+      gsap.set(toastRef.current, { opacity: 1, x: 0 })
+    } else {
+      gsap.fromTo(
+        toastRef.current,
+        { opacity: 0, x: 16 },
+        { opacity: 1, x: 0, duration: 0.25, ease: 'power2.out' },
+      )
+    }
     clearTimeout(toastTimerRef.current)
     toastTimerRef.current = setTimeout(
       () => setError({ field: '', message: '' }),
@@ -327,18 +375,27 @@ export default function Login({ onAuthenticated }: LoginProps) {
   }, [step, email, password, name, confirm])
 
   const backToEmail = () => {
+    // The slide-out is decoration; going back is the point. Both paths must
+    // reach this, or the EDIT button does nothing without motion.
+    const reset = () => {
+      setStep('email')
+      setPassword('')
+      setConfirm('')
+      setName('')
+      setError({ field: '', message: '' })
+    }
+
+    if (prefersReducedMotion()) {
+      reset()
+      return
+    }
+
     gsap.to(fieldsRef.current, {
       opacity: 0,
       x: -18,
       duration: 0.2,
       ease: 'power2.in',
-      onComplete: () => {
-        setStep('email')
-        setPassword('')
-        setConfirm('')
-        setName('')
-        setError({ field: '', message: '' })
-      },
+      onComplete: reset,
     })
   }
 
@@ -350,17 +407,23 @@ export default function Login({ onAuthenticated }: LoginProps) {
 
   const handleSubmit = () => {
     if (submitting) return
-    gsap.fromTo(
-      submitBtnRef.current,
-      { scale: 1 },
-      {
-        scale: 0.97,
-        duration: 0.08,
-        yoyo: true,
-        repeat: 1,
-        ease: 'power1.inOut',
-      },
-    )
+    const reduced = prefersReducedMotion()
+
+    // Press feedback and the idle pulse are both transient flourishes — the
+    // button's own :active and disabled states still read without them.
+    if (!reduced) {
+      gsap.fromTo(
+        submitBtnRef.current,
+        { scale: 1 },
+        {
+          scale: 0.97,
+          duration: 0.08,
+          yoyo: true,
+          repeat: 1,
+          ease: 'power1.inOut',
+        },
+      )
+    }
 
     const err = validate()
     if (err) {
@@ -369,11 +432,13 @@ export default function Login({ onAuthenticated }: LoginProps) {
     }
 
     if (step === 'email') {
-      gsap.fromTo(
-        submitPulseRef.current,
-        { opacity: 0, scale: 1 },
-        { opacity: 0.2, scale: 1.04, duration: 0.4, ease: 'power2.out' },
-      )
+      if (!reduced) {
+        gsap.fromTo(
+          submitPulseRef.current,
+          { opacity: 0, scale: 1 },
+          { opacity: 0.2, scale: 1.04, duration: 0.4, ease: 'power2.out' },
+        )
+      }
       setSubmitting(true)
       checkEmail(email.trim())
         .then((exists) => {

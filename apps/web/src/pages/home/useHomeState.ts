@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { User } from '@keel/types'
 import type { ConfirmDeleteState, Prefs, Profile, Screen } from './types'
+import { prefersReducedMotion } from '../../lib/motion'
 import { useTodos } from './state/useTodos'
 import { useRoutines } from './state/useRoutines'
 import { useProjects } from './state/useProjects'
@@ -62,6 +63,12 @@ export function useHomeState(user: User, onSignOut: () => void) {
 
   const startCount = useCallback(() => {
     cancelAnimationFrame(cntRafRef.current)
+    // The figures are the content; counting up to them is the flourish. Jump
+    // straight to the real numbers rather than animating a frame at a time.
+    if (prefersReducedMotion()) {
+      setCountProg(1)
+      return
+    }
     const t0 = performance.now()
     const step = (t: number) => {
       const pr = Math.min(1, (t - t0) / COUNT_MS)

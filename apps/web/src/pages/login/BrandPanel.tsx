@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import LogoMark from '../../components/LogoMark'
+import { FULL_MOTION, prefersReducedMotion } from '../../lib/motion'
 
 const QUOTES = [
   {
@@ -37,47 +38,62 @@ export default function BrandPanel() {
   const tagRef = useRef<HTMLDivElement>(null)
 
   // Entrance, then the logo breathes on a loop.
+  //
+  // Both are decoration: nothing here needs to finish for the screen to work,
+  // so under reduced motion they simply never run and the panel renders at its
+  // resting state. matchMedia also reverts anything it set if the setting
+  // changes while the page is open.
   useEffect(() => {
-    const tl = gsap
-      .timeline()
-      .fromTo(
-        logoRef.current,
-        { opacity: 0, y: -6 },
-        { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' },
-        0,
-      )
-      .fromTo(
-        quoteRef.current,
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
-        0.1,
-      )
-      .fromTo(
-        tagRef.current,
-        { opacity: 0 },
-        { opacity: 1, duration: 0.4, ease: 'power2.out' },
-        0.3,
-      )
+    const mm = gsap.matchMedia()
 
-    const idleTween = gsap.to(logoMarkRef.current, {
-      scale: 1.06,
-      duration: 2.6,
-      ease: 'sine.inOut',
-      repeat: -1,
-      yoyo: true,
-      transformOrigin: '50% 50%',
+    mm.add(FULL_MOTION, () => {
+      const tl = gsap
+        .timeline()
+        .fromTo(
+          logoRef.current,
+          { opacity: 0, y: -6 },
+          { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' },
+          0,
+        )
+        .fromTo(
+          quoteRef.current,
+          { opacity: 0, y: 10 },
+          { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
+          0.1,
+        )
+        .fromTo(
+          tagRef.current,
+          { opacity: 0 },
+          { opacity: 1, duration: 0.4, ease: 'power2.out' },
+          0.3,
+        )
+
+      const idleTween = gsap.to(logoMarkRef.current, {
+        scale: 1.06,
+        duration: 2.6,
+        ease: 'sine.inOut',
+        repeat: -1,
+        yoyo: true,
+        transformOrigin: '50% 50%',
+      })
+
+      return () => {
+        tl.kill()
+        idleTween.kill()
+      }
     })
 
-    return () => {
-      tl.kill()
-      idleTween.kill()
-    }
+    return () => mm.revert()
   }, [])
 
   // Motes drifting up the panel.
+  //
+  // This is the most expensive thing on the screen — a canvas repaint every
+  // frame, forever — and it is pure decoration, so reduced motion skips it
+  // entirely rather than drawing a still frame.
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
+    if (!canvas || prefersReducedMotion()) return
 
     let raf = 0
     let t = 0
@@ -133,16 +149,25 @@ export default function BrandPanel() {
   }, [])
 
   // Fade the quote out, swap the text, fade it back in.
+  //
+  // The rotation itself is content, not motion, so it keeps going either way;
+  // reduced motion drops the cross-fade and swaps the text outright.
   useEffect(() => {
+    const nextQuote = () => setQuoteIndex((i) => (i + 1) % QUOTES.length)
+
     const id = setInterval(() => {
       const el = quoteRef.current
       if (!el) return
+      if (prefersReducedMotion()) {
+        nextQuote()
+        return
+      }
       gsap.to(el, {
         opacity: 0,
         duration: 0.35,
         ease: 'power2.in',
         onComplete: () => {
-          setQuoteIndex((i) => (i + 1) % QUOTES.length)
+          nextQuote()
           // Wait for the new text to paint before fading in, or the swap shows.
           requestAnimationFrame(() =>
             gsap.to(el, { opacity: 1, duration: 0.4, ease: 'power2.out' }),

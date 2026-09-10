@@ -63,3 +63,25 @@ input:-webkit-autofill:focus {
   -webkit-text-fill-color: var(--ink);
   caret-color: var(--ink);
 }
+
+/* Honour the visitor's OS "reduce motion" setting. This covers every CSS
+   animation in the app — the two dozen in Home.css plus the row and screen
+   entrances — in one place.
+
+   0.01ms rather than `animation: none`: the animation still runs, so its
+   fill-mode still applies the end state and its events still fire. Killing it
+   outright would leave anything animating *into* place stuck at its start —
+   the splash, for one, hides itself in the last keyframe and would never go.
+
+   Delays are deliberately left alone. They sequence the interface; they are
+   not motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
