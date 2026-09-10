@@ -8,7 +8,12 @@ interface LogoMarkProps {
 }
 
 const LogoMark = forwardRef<SVGSVGElement, LogoMarkProps>(function LogoMark(
-  { size = 22, strokeColor = '#221F1B', dotColor = '#AF4933', className },
+  {
+    size = 22,
+    strokeColor = 'var(--ink)',
+    dotColor = 'var(--logo-dot)',
+    className,
+  },
   ref,
 ) {
   const height = size * (520 / 610)

@@ -128,7 +128,7 @@ export default function SuccessView({
           <path
             ref={checkPathRef}
             d="M5 12.5L10 17.5L19 7"
-            stroke="#FAF8F3"
+            stroke="var(--paper)"
             strokeWidth="2.4"
             strokeLinecap="round"
             strokeLinejoin="round"

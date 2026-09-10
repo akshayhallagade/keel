@@ -10,6 +10,9 @@
 
   --accent: #c64f3b;
   --accent-hover: #a83f2f;
+  /* The dot in the keel mark. Deliberately not --accent: the logo keeps its
+     own red whatever accent the user picks. Also drawn by the splash. */
+  --logo-dot: #af4933;
 
   --line: #e5e0d6;
   --line-soft: #efebe2;
@@ -42,6 +45,14 @@
 
 body {
   margin: 0;
+}
+
+/* One thin, paper-coloured scrollbar everywhere — page, sidebar, panels.
+   These two standard properties are all Chrome, Edge, Firefox and Safari need;
+   no ::-webkit- pseudo-elements required. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted-2) transparent;
 }
 
 #root {

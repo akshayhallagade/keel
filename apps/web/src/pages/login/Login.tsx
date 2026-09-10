@@ -23,7 +23,8 @@ interface LoginProps {
   onAuthenticated?: (user: User) => void
 }
 
-const STRENGTH_PALETTE = ['#C64F3B', '#C0913C', '#5B7B4F']
+/// Colour of a filled segment at each score: weak, okay, then good/strong.
+const STRENGTH_PALETTE = ['var(--accent)', 'var(--warn)', 'var(--positive)']
 const STRENGTH_LABELS = ['WEAK', 'OKAY', 'GOOD', 'STRONG']
 
 const errorMessage = (e: unknown) =>
@@ -480,8 +481,10 @@ export default function Login({ onAuthenticated }: LoginProps) {
       })
   }
 
+  // Three segments; the first `strengthScore` of them light up, all in the
+  // colour that score has earned.
   const strengthScore = step === 'details' ? passwordStrength(password) : 0
-  const strengthColors = ['#E5E0D6', '#E5E0D6', '#E5E0D6']
+  const strengthColors = ['var(--line)', 'var(--line)', 'var(--line)']
   for (let i = 0; i < strengthScore; i++)
     strengthColors[i] = STRENGTH_PALETTE[strengthScore - 1]
   const confirmMatches = confirm.length > 0 && confirm === password
@@ -636,7 +639,7 @@ export default function Login({ onAuthenticated }: LoginProps) {
                           <svg width="10" height="10" viewBox="0 0 10 10">
                             <path
                               d="M1.5 5L4 7.5L8.5 2"
-                              stroke="#FAF8F3"
+                              stroke="var(--paper)"
                               strokeWidth="1.6"
                               fill="none"
                               strokeLinecap="round"
@@ -660,18 +663,12 @@ export default function Login({ onAuthenticated }: LoginProps) {
                     <div className="field-input-wrap">
                       <input
                         type={showConfirm ? 'text' : 'password'}
-                        className="field-input"
+                        className={`field-input${
+                          confirmMatches ? ' is-match' : ''
+                        }`}
                         value={confirm}
                         onChange={(e) => setConfirm(e.target.value)}
                         placeholder="Type it again"
-                        style={{
-                          borderColor:
-                            confirm.length > 0
-                              ? confirmMatches
-                                ? '#5B7B4F'
-                                : '#E5E0D6'
-                              : '#E5E0D6',
-                        }}
                       />
                       <RevealToggle
                         shown={showConfirm}
@@ -680,10 +677,9 @@ export default function Login({ onAuthenticated }: LoginProps) {
                     </div>
                     {confirm.length > 0 && (
                       <div
-                        className="confirm-hint"
-                        style={{
-                          color: confirmMatches ? '#5B7B4F' : '#A39B8B',
-                        }}
+                        className={`confirm-hint${
+                          confirmMatches ? ' is-match' : ''
+                        }`}
                       >
                         {confirmMatches
                           ? '✓ Passwords match'

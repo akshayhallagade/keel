@@ -107,10 +107,23 @@
   filter: invert(0.92) hue-rotate(180deg);
 }
 
-/* ---------- Splash ---------- */
+/* ---------- Splash ----------
+   The literal colours below are deliberate, not leftovers: the splash is the
+   one screen that does not use the app palette, and it must not shift when the
+   user picks a different accent. Only the logo dot is shared. */
+
+/* Dark mode puts a `filter` on .home-shell, which makes it the containing block
+   for the fixed splash inside it — so `inset: 0` stretches to the whole (tall)
+   shell instead of the viewport. The explicit height pins it to one screen
+   either way, and the body lock hides the app's scrollbar while it is up. */
+body:has(.hs-splash) {
+  overflow: hidden;
+}
+
 .hs-splash {
   position: fixed;
   inset: 0;
+  height: 100svh;
   z-index: 100;
   background: #f3f0e7;
   display: flex;
@@ -136,13 +149,16 @@
   stroke-dasharray: 1;
 }
 .hs-splash-dot {
-  fill: #af4933;
+  fill: var(--logo-dot);
   transform-box: fill-box;
   transform-origin: center;
   animation: dotPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 1.25s both;
 }
 
 /* ---------- Sidebar ---------- */
+/* Sticky so only the screen beside it scrolls. It needs align-self and an
+   explicit height because a flex item stretches to the shell by default, which
+   would leave sticky nothing to move within. */
 .hs-sidebar {
   width: 192px;
   flex: none;
@@ -152,6 +168,12 @@
   flex-direction: column;
   gap: 26px;
   background: var(--sidebar-bg);
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100svh;
+  box-sizing: border-box;
+  overflow-y: auto;
 }
 .hs-sidebar-brand {
   display: flex;
@@ -1600,8 +1622,11 @@
   cursor: pointer;
   background: none;
 }
+/* Its border was a fixed pink while its text followed --accent, so picking a
+   different accent left the button half-recoloured. Mixing from --accent keeps
+   the pair together whatever the user chooses. */
 .hs-btn-outline.is-danger {
-  border-color: #e8cfc8;
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--paper));
   color: var(--accent);
 }
 

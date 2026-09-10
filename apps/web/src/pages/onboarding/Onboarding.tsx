@@ -306,8 +306,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         {QUESTIONS.map((q, i) => (
           <div
             key={q.id}
-            className="ob-progress-seg"
-            style={{ background: i < step ? '#C64F3B' : '#E5E0D6' }}
+            className={`ob-progress-seg${i < step ? ' is-done' : ''}`}
           />
         ))}
       </div>
@@ -344,15 +343,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           </div>
 
           {saveError && (
-            <div
-              role="alert"
-              style={{
-                color: '#C64F3B',
-                font: '500 11px "IBM Plex Mono",monospace',
-                letterSpacing: '.06em',
-                marginBottom: 12,
-              }}
-            >
+            <div role="alert" className="ob-save-error">
               {saveError}
             </div>
           )}

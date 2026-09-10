@@ -189,7 +189,7 @@ export default function BrandPanel() {
           ref={logoMarkRef}
           className="logo-mark"
           size={25}
-          strokeColor="#FAF8F3"
+          strokeColor="var(--paper)"
         />
         <div className="logo-word">KEEL</div>
       </div>

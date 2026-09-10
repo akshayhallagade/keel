@@ -14,7 +14,7 @@
 }
 
 .onboarding-page a:hover {
-  color: #a83f2f;
+  color: var(--accent-hover);
 }
 
 .ob-wipe {
@@ -64,6 +64,17 @@
   flex: 1;
   height: 2px;
   transition: background 0.3s;
+  background: var(--line);
+}
+.ob-progress-seg.is-done {
+  background: var(--accent);
+}
+
+.ob-save-error {
+  color: var(--accent);
+  font: 500 11px var(--mono);
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
 }
 
 .ob-main {
