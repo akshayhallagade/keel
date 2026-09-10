@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import gsap from 'gsap'
 import type { User } from '@keel/types'
 import { checkEmailSchema, loginSchema, signupSchema } from '@keel/validation'
-import LogoMark from '../../components/LogoMark'
+import BrandPanel from './BrandPanel'
+import SuccessView from './SuccessView'
 import RevealToggle from '../../components/RevealToggle'
 import { checkEmail, login as loginRequest, signup } from '../../api/auth'
 import { ApiError } from '../../api/client'
@@ -20,18 +21,6 @@ interface ValidationError {
 interface LoginProps {
   onAuthenticated?: (user: User) => void
 }
-
-const QUOTES = [
-  {
-    text: 'You do not rise to the level of your goals. You fall to the level of your systems.',
-    author: 'JAMES CLEAR',
-  },
-  {
-    text: 'Small habits, compounded, build the life you want.',
-    author: 'A KEEL MEMBER',
-  },
-  { text: 'What gets scheduled gets done.', author: 'KEEL' },
-]
 
 const STRENGTH_PALETTE = ['#C64F3B', '#C0913C', '#5B7B4F']
 const STRENGTH_LABELS = ['WEAK', 'OKAY', 'GOOD', 'STRONG']
@@ -84,15 +73,9 @@ export default function Login({ onAuthenticated }: LoginProps) {
   const [submitting, setSubmitting] = useState(false)
   const [dots, setDots] = useState('')
   const [success, setSuccess] = useState(false)
-  const [quoteIndex, setQuoteIndex] = useState(0)
 
   const wipeRef = useRef<HTMLDivElement>(null)
   const toastRef = useRef<HTMLDivElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const logoMarkRef = useRef<SVGSVGElement>(null)
-  const brandLogoRef = useRef<HTMLDivElement>(null)
-  const brandQuoteRef = useRef<HTMLDivElement>(null)
-  const brandTagRef = useRef<HTMLDivElement>(null)
 
   const headlineRef = useRef<HTMLDivElement>(null)
   const subheadRef = useRef<HTMLDivElement>(null)
@@ -108,16 +91,7 @@ export default function Login({ onAuthenticated }: LoginProps) {
   const nameFieldRef = useRef<HTMLDivElement>(null)
   const confirmFieldRef = useRef<HTMLDivElement>(null)
 
-  const successMarkRef = useRef<HTMLDivElement>(null)
-  const successRingRef = useRef<HTMLDivElement>(null)
-  const checkPathRef = useRef<SVGPathElement>(null)
-  const successHeadRef = useRef<HTMLDivElement>(null)
-  const successSubRef = useRef<HTMLDivElement>(null)
-  const successCtaRef = useRef<HTMLDivElement>(null)
-  const successProgressRef = useRef<HTMLDivElement>(null)
-
   const prevStepRef = useRef<Step>('email')
-  const prevSuccessRef = useRef(false)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   )
@@ -157,27 +131,11 @@ export default function Login({ onAuthenticated }: LoginProps) {
     confirm: confirmFieldRef,
   }
 
-  // Entrance animation + idle logo breathing
+  /// Entrance for the form side. BrandPanel runs its own timeline from the
+  /// same mount, so the two halves still appear interleaved on one clock.
   useEffect(() => {
-    const tl = gsap.timeline()
-    tl.fromTo(
-      brandLogoRef.current,
-      { opacity: 0, y: -6 },
-      { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' },
-      0,
-    )
-      .fromTo(
-        brandQuoteRef.current,
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
-        0.1,
-      )
-      .fromTo(
-        brandTagRef.current,
-        { opacity: 0 },
-        { opacity: 1, duration: 0.4, ease: 'power2.out' },
-        0.3,
-      )
+    const tl = gsap
+      .timeline()
       .fromTo(
         headlineRef.current,
         { opacity: 0, y: 8 },
@@ -203,86 +161,9 @@ export default function Login({ onAuthenticated }: LoginProps) {
         0.46,
       )
 
-    const idleTween = gsap.to(logoMarkRef.current, {
-      scale: 1.06,
-      duration: 2.6,
-      ease: 'sine.inOut',
-      repeat: -1,
-      yoyo: true,
-      transformOrigin: '50% 50%',
-    })
-
     return () => {
       tl.kill()
-      idleTween.kill()
     }
-  }, [])
-
-  // Floating motes background on the brand panel
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    let raf = 0
-    let t = 0
-    const motes = Array.from({ length: 48 }, () => ({
-      x: Math.random(),
-      y: Math.random(),
-      r: Math.random() * 1.8 + 0.6,
-      s: Math.random() * 0.0009 + 0.0003,
-      a: Math.random() * 0.28 + 0.08,
-      ph: Math.random() * 6.28,
-    }))
-    const loop = () => {
-      raf = requestAnimationFrame(loop)
-      const panel = canvas.parentElement
-      if (!panel) return
-      const w = panel.clientWidth
-      const h = panel.clientHeight
-      const dpr = window.devicePixelRatio || 1
-      if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
-        canvas.width = w * dpr
-        canvas.height = h * dpr
-      }
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      ctx.clearRect(0, 0, w, h)
-      t += 0.016
-      for (const p of motes) {
-        p.y -= p.s
-        if (p.y < -0.02) {
-          p.y = 1.02
-          p.x = Math.random()
-        }
-        const x = (p.x + Math.sin(t * 0.4 + p.ph) * 0.012) * w
-        ctx.beginPath()
-        ctx.arc(x, p.y * h, p.r, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(237,234,227,${p.a * (0.7 + 0.3 * Math.sin(t * 1.5 + p.ph))})`
-        ctx.fill()
-      }
-    }
-    loop()
-    return () => cancelAnimationFrame(raf)
-  }, [])
-
-  // Rotating brand quote
-  useEffect(() => {
-    const id = setInterval(() => {
-      const el = brandQuoteRef.current
-      if (!el) return
-      gsap.to(el, {
-        opacity: 0,
-        duration: 0.35,
-        ease: 'power2.in',
-        onComplete: () => {
-          setQuoteIndex((i) => (i + 1) % QUOTES.length)
-          requestAnimationFrame(() =>
-            gsap.to(el, { opacity: 1, duration: 0.4, ease: 'power2.out' }),
-          )
-        },
-      })
-    }, 7000)
-    return () => clearInterval(id)
   }, [])
 
   // Step transitions: slide fields, reveal email chip, focus, idle nudge
@@ -387,64 +268,6 @@ export default function Login({ onAuthenticated }: LoginProps) {
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [error])
-
-  // Success sequence: checkmark draw-in, then auto-continue
-  useEffect(() => {
-    if (success && !prevSuccessRef.current) {
-      const path = checkPathRef.current
-      if (path) {
-        const len = path.getTotalLength()
-        gsap.set(path, { strokeDasharray: len, strokeDashoffset: len })
-      }
-      gsap
-        .timeline()
-        .fromTo(
-          successMarkRef.current,
-          { scale: 0, opacity: 0 },
-          { scale: 1, opacity: 1, duration: 0.35, ease: 'power2.out' },
-        )
-        .to(
-          path,
-          { strokeDashoffset: 0, duration: 0.35, ease: 'power2.out' },
-          0.1,
-        )
-        .to(
-          successRingRef.current,
-          { scale: 1.4, opacity: 0, duration: 0.6, ease: 'power2.out' },
-          0.25,
-        )
-        .fromTo(
-          successHeadRef.current,
-          { opacity: 0, y: 6 },
-          { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' },
-          0.3,
-        )
-        .fromTo(
-          successSubRef.current,
-          { opacity: 0, y: 6 },
-          { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' },
-          0.38,
-        )
-        .fromTo(
-          successCtaRef.current,
-          { opacity: 0, y: 6 },
-          { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' },
-          0.46,
-        )
-      gsap.fromTo(
-        successProgressRef.current,
-        { width: '0%' },
-        {
-          width: '100%',
-          duration: 2.4,
-          ease: 'none',
-          delay: 0.5,
-          onComplete: () => doContinueRef.current(),
-        },
-      )
-    }
-    prevSuccessRef.current = success
-  }, [success])
 
   useEffect(
     () => () => {
@@ -592,7 +415,6 @@ export default function Login({ onAuthenticated }: LoginProps) {
       })
   }
 
-  const quote = QUOTES[quoteIndex]
   const strengthScore = step === 'details' ? passwordStrength(password) : 0
   const strengthColors = ['#E5E0D6', '#E5E0D6', '#E5E0D6']
   for (let i = 0; i < strengthScore; i++)
@@ -618,10 +440,6 @@ export default function Login({ onAuthenticated }: LoginProps) {
       : step === 'password'
         ? 'LOG IN'
         : 'CREATE ACCOUNT'
-  const successHeadline = isReturning ? 'You’re in' : 'Account created'
-  const successSub = isReturning
-    ? 'Good to see you again.'
-    : 'Welcome to Keel — let’s set things up.'
 
   return (
     <div className="login-page">
@@ -633,64 +451,15 @@ export default function Login({ onAuthenticated }: LoginProps) {
         </div>
       )}
 
-      <div className="brand-panel">
-        <canvas className="brand-canvas" ref={canvasRef} />
-        <div className="brand-logo" ref={brandLogoRef}>
-          <LogoMark
-            ref={logoMarkRef}
-            className="logo-mark"
-            size={25}
-            strokeColor="#FAF8F3"
-          />
-          <div className="logo-word">KEEL</div>
-        </div>
-
-        <div className="brand-quote" ref={brandQuoteRef}>
-          <div className="quote-text">&ldquo;{quote.text}&rdquo;</div>
-          <div className="quote-author">&mdash; {quote.author}</div>
-        </div>
-
-        <div className="brand-tag" ref={brandTagRef}>
-          A CALM PLACE FOR TODOS, ROUTINES, GOALS &amp; MONEY
-        </div>
-      </div>
+      <BrandPanel />
 
       <div className="form-panel">
         <div className="form-inner">
           {success ? (
-            <div className="success-view">
-              <div className="success-mark" ref={successMarkRef}>
-                <div className="success-ring" ref={successRingRef} />
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path
-                    ref={checkPathRef}
-                    d="M5 12.5L10 17.5L19 7"
-                    stroke="#FAF8F3"
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <div className="success-headline" ref={successHeadRef}>
-                {successHeadline}
-              </div>
-              <div className="success-sub" ref={successSubRef}>
-                {successSub}
-              </div>
-              <div
-                className="success-cta"
-                ref={successCtaRef}
-                role="button"
-                tabIndex={0}
-                onClick={() => doContinueRef.current()}
-              >
-                CONTINUE &rarr;
-              </div>
-              <div className="success-track">
-                <div className="success-progress" ref={successProgressRef} />
-              </div>
-            </div>
+            <SuccessView
+              isReturning={isReturning}
+              onContinue={() => doContinueRef.current()}
+            />
           ) : (
             <div>
               <div className="headline" ref={headlineRef}>
