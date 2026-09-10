@@ -1,4 +1,21 @@
 import type { HomeState } from '../useHomeState'
+import TodoRow from '../rows/TodoRow'
+import { RoutineLine } from '../rows/RoutineRow'
+
+/// Static until the calendar and money feeds are wired up.
+const UP_NEXT = [
+  { at: '4:30 PM', what: 'Gym — pull day', sub: 'Routine · streak 12 days' },
+  {
+    at: '7:00 PM',
+    what: 'SIP auto-invest hits account',
+    sub: '₹15,000 · Index fund',
+  },
+  {
+    at: 'SUN 9AM',
+    what: 'Credit card bill due — HDFC',
+    sub: '₹23,410 · autopay on',
+  },
+]
 
 export default function Today({ vm }: { vm: HomeState }) {
   const {
@@ -36,78 +53,12 @@ export default function Today({ vm }: { vm: HomeState }) {
         <div className="hs-section-label">TOP 3 FOR TODAY</div>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {top3.map((td) => (
-            <div
-              key={td.text}
-              onMouseEnter={td.onEnter}
-              onMouseLeave={td.onLeave}
-              className="hs-row"
-              style={{
-                opacity: td.opacity,
-                transform: td.shift,
-                animationDelay: td.delay,
-              }}
-            >
-              <button
-                type="button"
-                className="hs-checkbox"
-                onClick={td.toggle}
-                style={{ borderColor: td.boxBorder, background: td.boxBg }}
-              >
-                <span
-                  className="hs-checkbox-tick"
-                  style={{ animation: td.tickAnim }}
-                >
-                  {td.check}
-                </span>
-              </button>
-              <div className="hs-row-body">
-                <div
-                  className="hs-row-title"
-                  style={{ color: td.textColor, textDecoration: td.deco }}
-                >
-                  {td.text}
-                </div>
-                <div className="hs-row-sub">
-                  <span style={{ color: td.dotColor }}>●</span> {td.tag} &nbsp;{' '}
-                  {td.due}
-                </div>
-              </div>
-              <button
-                type="button"
-                title="Remove from Top 3"
-                className="hs-star-btn"
-                onClick={td.starToggle}
-                style={{ color: td.starColor, opacity: td.starOpacity }}
-              >
-                {td.starGlyph}
-              </button>
-              <button
-                type="button"
-                title="Edit"
-                className="hs-row-action"
-                onClick={td.edit}
-                style={{ opacity: td.editOpacity }}
-              >
-                ✎
-              </button>
-            </div>
+            <TodoRow key={td.text} td={td} />
           ))}
           {showOpenSpot && (
             <div className="hs-row" style={{ animation: 'none' }}>
-              <div
-                className="hs-checkbox"
-                style={{ borderColor: 'var(--check-border)' }}
-              />
-              <div
-                style={{
-                  flex: 1,
-                  fontSize: 14.5,
-                  fontStyle: 'italic',
-                  color: 'var(--muted)',
-                }}
-              >
-                (open spot)
-              </div>
+              <div className="hs-checkbox" />
+              <div className="hs-open-spot">(open spot)</div>
             </div>
           )}
         </div>
@@ -128,89 +79,21 @@ export default function Today({ vm }: { vm: HomeState }) {
           </button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <div
-            style={{
-              display: 'flex',
-              gap: 18,
-              padding: '13px 0',
-              borderBottom: '1px solid var(--line-soft)',
-            }}
-          >
+          {UP_NEXT.map((u, i) => (
             <div
-              style={{
-                font: '400 11px "IBM Plex Mono",monospace',
-                color: 'var(--muted)',
-                width: 66,
-                flex: 'none',
-                paddingTop: 2,
-              }}
+              key={u.at}
+              className="hs-agenda-row"
+              style={
+                i === UP_NEXT.length - 1 ? { borderBottom: 'none' } : undefined
+              }
             >
-              4:30 PM
-            </div>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 500 }}>
-                Gym — pull day
-              </div>
-              <div
-                style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}
-              >
-                Routine · streak 12 days
+              <div className="hs-agenda-time">{u.at}</div>
+              <div>
+                <div className="hs-agenda-what">{u.what}</div>
+                <div className="hs-agenda-sub">{u.sub}</div>
               </div>
             </div>
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              gap: 18,
-              padding: '13px 0',
-              borderBottom: '1px solid var(--line-soft)',
-            }}
-          >
-            <div
-              style={{
-                font: '400 11px "IBM Plex Mono",monospace',
-                color: 'var(--muted)',
-                width: 66,
-                flex: 'none',
-                paddingTop: 2,
-              }}
-            >
-              7:00 PM
-            </div>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 500 }}>
-                SIP auto-invest hits account
-              </div>
-              <div
-                style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}
-              >
-                ₹15,000 · Index fund
-              </div>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 18, padding: '13px 0' }}>
-            <div
-              style={{
-                font: '400 11px "IBM Plex Mono",monospace',
-                color: 'var(--muted)',
-                width: 66,
-                flex: 'none',
-                paddingTop: 2,
-              }}
-            >
-              SUN 9AM
-            </div>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 500 }}>
-                Credit card bill due — HDFC
-              </div>
-              <div
-                style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}
-              >
-                ₹23,410 · autopay on
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
 
         <div className="hs-section-row">
@@ -229,63 +112,7 @@ export default function Today({ vm }: { vm: HomeState }) {
           </button>
         </div>
         {allOpen.map((td) => (
-          <div
-            key={td.text}
-            onMouseEnter={td.onEnter}
-            onMouseLeave={td.onLeave}
-            className="hs-row"
-            style={{
-              opacity: td.opacity,
-              transform: td.shift,
-              animationDelay: td.delay,
-            }}
-          >
-            <button
-              type="button"
-              className="hs-checkbox"
-              onClick={td.toggle}
-              style={{ borderColor: td.boxBorder, background: td.boxBg }}
-            >
-              <span
-                className="hs-checkbox-tick"
-                style={{ animation: td.tickAnim }}
-              >
-                {td.check}
-              </span>
-            </button>
-            <div className="hs-row-body">
-              <div
-                style={{
-                  fontSize: 14,
-                  color: td.textColor,
-                  textDecoration: td.deco,
-                }}
-              >
-                {td.text}
-              </div>
-              <div className="hs-row-sub">
-                {td.tag} &nbsp; {td.due}
-              </div>
-            </div>
-            <button
-              type="button"
-              title="Add to Top 3"
-              className="hs-star-btn"
-              onClick={td.starToggle}
-              style={{ color: td.starColor, opacity: td.starOpacity }}
-            >
-              {td.starGlyph}
-            </button>
-            <button
-              type="button"
-              title="Edit"
-              className="hs-row-action"
-              onClick={td.edit}
-              style={{ opacity: td.editOpacity }}
-            >
-              ✎
-            </button>
-          </div>
+          <TodoRow key={td.text} td={td} />
         ))}
 
         <div className="hs-add-row">
@@ -320,66 +147,16 @@ export default function Today({ vm }: { vm: HomeState }) {
               ROUTINES · {routinesDone}/{routinesTotal}
             </div>
           </div>
-          {routines.map((r) => {
-            const rt = mkRoutine(r)
-            return (
-              <div
-                key={r.name}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '5px 0',
-                }}
-              >
-                <button
-                  type="button"
-                  className="hs-checkbox"
-                  style={{
-                    width: 14,
-                    height: 14,
-                    borderColor: rt.boxBorder,
-                    background: rt.boxBg,
-                  }}
-                  onClick={rt.toggle}
-                >
-                  <span
-                    className="hs-checkbox-tick"
-                    style={{ animation: rt.tickAnim }}
-                  >
-                    {rt.check}
-                  </span>
-                </button>
-                <div
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                    fontSize: 13,
-                    color: rt.color,
-                    textDecoration: rt.deco,
-                  }}
-                >
-                  {rt.name}{' '}
-                  <span style={{ font: '400 9px "IBM Plex Mono",monospace' }}>
-                    {rt.suffix}
-                  </span>
-                </div>
-              </div>
-            )
-          })}
+          {routines.map((r) => (
+            <RoutineLine key={r.name} rt={mkRoutine(r)} />
+          ))}
         </div>
+
         <div>
           <div className="hs-section-label">MONEY THIS MONTH</div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'baseline',
-              marginTop: 12,
-            }}
-          >
-            <div style={{ fontSize: 13, color: 'var(--text-2)' }}>Spent</div>
-            <div style={{ font: '500 14px "IBM Plex Mono",monospace' }}>
+          <div className="hs-rail-stat">
+            <div className="hs-rail-stat-label">Spent</div>
+            <div className="hs-rail-stat-value">
               ₹{Math.round(spent).toLocaleString('en-IN')}
             </div>
           </div>
@@ -387,37 +164,18 @@ export default function Today({ vm }: { vm: HomeState }) {
             <div className="hs-bar-fill" style={{ width: spentPct }} />
           </div>
           <div className="hs-meta-sm">56% OF ₹75,000 BUDGET</div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'baseline',
-              marginTop: 12,
-            }}
-          >
-            <div style={{ fontSize: 13, color: 'var(--text-2)' }}>
-              Investments
-            </div>
-            <div style={{ font: '500 14px "IBM Plex Mono",monospace' }}>
-              {investToday}{' '}
-              <span style={{ color: 'var(--positive)', fontSize: 11 }}>
-                +2.1%
-              </span>
+          <div className="hs-rail-stat">
+            <div className="hs-rail-stat-label">Investments</div>
+            <div className="hs-rail-stat-value">
+              {investToday} <span className="hs-delta-up">+2.1%</span>
             </div>
           </div>
         </div>
+
         {prefs.quote && (
           <div>
             <div className="hs-section-label">RESURFACING</div>
-            <div
-              className="hs-newsreader"
-              style={{
-                fontSize: 15.5,
-                lineHeight: 1.5,
-                marginTop: 12,
-                color: '#3D382F',
-              }}
-            >
+            <div className="hs-newsreader hs-quote-body">
               &ldquo;What you do every day matters more than what you do once in
               a while.&rdquo;
             </div>

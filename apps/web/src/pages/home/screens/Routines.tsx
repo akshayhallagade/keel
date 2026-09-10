@@ -1,8 +1,34 @@
 import { ROUTINE_TYPES } from '../seedData'
 import type { HomeState } from '../useHomeState'
 import type { RoutinePeriod } from '../types'
+import { RoutineRow } from '../rows/RoutineRow'
 
 const DOW = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+
+function StatTile({
+  label,
+  value,
+  unit,
+  positive,
+}: {
+  label: string
+  value: string | number
+  unit: string
+  positive?: boolean
+}) {
+  return (
+    <div className="hs-stat-tile">
+      <div className="hs-stat-label">{label}</div>
+      <div
+        className="hs-stat-value"
+        style={positive ? { color: 'var(--positive)' } : undefined}
+      >
+        {value}
+      </div>
+      <div className="hs-stat-unit">{unit}</div>
+    </div>
+  )
+}
 
 export default function Routines({ vm }: { vm: HomeState }) {
   const {
@@ -16,7 +42,6 @@ export default function Routines({ vm }: { vm: HomeState }) {
     setRDraft,
     addRoutine,
     setRPanelState,
-    accent,
   } = vm
 
   const routinePct =
@@ -47,48 +72,20 @@ export default function Routines({ vm }: { vm: HomeState }) {
         <div className="hs-title-row">
           <div className="hs-title">Routines</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div
-              style={{
-                display: 'flex',
-                border: '1px solid var(--line)',
-                borderRadius: 6,
-                overflow: 'hidden',
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setRoutinesView('grouped')}
-                style={{
-                  font: '500 9px "IBM Plex Mono",monospace',
-                  letterSpacing: '.08em',
-                  padding: '7px 12px',
-                  cursor: 'pointer',
-                  border: 'none',
-                  color:
-                    routinesView !== 'flat' ? 'var(--paper)' : 'var(--text-2)',
-                  background:
-                    routinesView !== 'flat' ? accent : 'var(--input-bg)',
-                }}
-              >
-                GROUPED
-              </button>
-              <button
-                type="button"
-                onClick={() => setRoutinesView('flat')}
-                style={{
-                  font: '500 9px "IBM Plex Mono",monospace',
-                  letterSpacing: '.08em',
-                  padding: '7px 12px',
-                  cursor: 'pointer',
-                  border: 'none',
-                  color:
-                    routinesView === 'flat' ? 'var(--paper)' : 'var(--text-2)',
-                  background:
-                    routinesView === 'flat' ? accent : 'var(--input-bg)',
-                }}
-              >
-                FLAT
-              </button>
+            <div className="hs-segmented">
+              {(['grouped', 'flat'] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setRoutinesView(v)}
+                  aria-pressed={routinesView === v}
+                  className={`hs-segment${
+                    routinesView === v ? ' is-active' : ''
+                  }`}
+                >
+                  {v.toUpperCase()}
+                </button>
+              ))}
             </div>
             <div className="hs-meta-sm">
               {routinesDone}/{routinesTotal} DONE TODAY
@@ -105,274 +102,47 @@ export default function Routines({ vm }: { vm: HomeState }) {
         <div className="hs-meta">SATURDAY · JULY 5, 2026</div>
 
         {routinesView !== 'flat' ? (
-          (ROUTINE_TYPES as readonly RoutinePeriod[]).map((type) => {
-            const list = routines.filter((r) => r.period === type)
-            return (
-              <div key={type}>
+          (ROUTINE_TYPES as readonly RoutinePeriod[]).map((type) => (
+            <div key={type}>
+              <div className="hs-group-head">
                 <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    margin: '28px 0 2px',
-                    borderBottom: '1px solid var(--line)',
-                    paddingBottom: 8,
-                  }}
+                  className="hs-section-label"
+                  style={{ border: 'none', padding: 0 }}
                 >
-                  <div
-                    className="hs-section-label"
-                    style={{ border: 'none', padding: 0 }}
-                  >
-                    {type}
-                  </div>
-                  <div
-                    style={{
-                      font: '500 9px "IBM Plex Mono",monospace',
-                      letterSpacing: '.1em',
-                      color: 'var(--muted-2)',
-                    }}
-                  >
-                    LAST 7 DAYS · STREAK
-                  </div>
+                  {type}
                 </div>
-                {list.map((r) => {
-                  const rt = mkRoutine(r)
-                  return (
-                    <div
-                      key={r.name}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 16,
-                        padding: '15px 0',
-                        borderBottom: '1px solid var(--line-soft)',
-                      }}
-                    >
-                      <button
-                        type="button"
-                        className="hs-checkbox lg"
-                        onClick={rt.toggle}
-                        style={{
-                          borderColor: rt.boxBorder,
-                          background: rt.boxBg,
-                        }}
-                      >
-                        <span
-                          className="hs-checkbox-tick"
-                          style={{ animation: rt.tickAnim }}
-                        >
-                          {rt.check}
-                        </span>
-                      </button>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div
-                          style={{
-                            fontSize: 15,
-                            fontWeight: 500,
-                            color: rt.color,
-                            textDecoration: rt.deco,
-                          }}
-                        >
-                          {r.name}
-                        </div>
-                        <div className="hs-row-sub">
-                          {rt.time} {rt.suffix}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: 5, flex: 'none' }}>
-                        {rt.weekDots.map((wd, wi) => (
-                          <div
-                            key={wi}
-                            style={{
-                              width: 10,
-                              height: 10,
-                              borderRadius: '50%',
-                              background: wd.bg,
-                            }}
-                          />
-                        ))}
-                      </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 5,
-                          width: 44,
-                          justifyContent: 'flex-end',
-                          flex: 'none',
-                        }}
-                      >
-                        <span style={{ color: rt.streakColor, fontSize: 10 }}>
-                          ▲
-                        </span>
-                        <span
-                          style={{
-                            font: '500 14px "IBM Plex Mono",monospace',
-                            color: rt.streakColor,
-                          }}
-                        >
-                          {rt.streakLabel}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        title="Edit"
-                        className="hs-row-action"
-                        onClick={rt.edit}
-                        style={{ opacity: rt.delOpacity }}
-                      >
-                        ✎
-                      </button>
-                      <button
-                        type="button"
-                        title="Remove"
-                        className="hs-row-action"
-                        onClick={rt.del}
-                        style={{ opacity: rt.delOpacity }}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  )
-                })}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '12px 0',
-                    borderBottom: '1px solid var(--line-soft)',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 17,
-                      height: 17,
-                      border: '1.5px dashed var(--muted-2)',
-                      borderRadius: 4,
-                      flex: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: accent,
-                      fontSize: 12,
-                    }}
-                  >
-                    +
-                  </div>
-                  <input
-                    className="hs-add-input"
-                    value={routineDrafts[type] || ''}
-                    onChange={(e) => setRDraft(type, e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter')
-                        addRoutine(type, routineDrafts[type])
-                    }}
-                    placeholder={`Add a ${type.toLowerCase()} routine — press Enter`}
-                  />
-                </div>
+                <div className="hs-group-head-note">LAST 7 DAYS · STREAK</div>
               </div>
-            )
-          })
+
+              {routines
+                .filter((r) => r.period === type)
+                .map((r) => (
+                  <RoutineRow key={r.name} rt={mkRoutine(r)} sub="time" />
+                ))}
+
+              <div className="hs-add-row-dashed">
+                <div className="hs-add-dash-box">+</div>
+                <input
+                  className="hs-add-input"
+                  value={routineDrafts[type] || ''}
+                  onChange={(e) => setRDraft(type, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') addRoutine(type, routineDrafts[type])
+                  }}
+                  placeholder={`Add a ${type.toLowerCase()} routine — press Enter`}
+                />
+              </div>
+            </div>
+          ))
         ) : (
           <div style={{ marginTop: 24 }}>
-            {routines.map((r) => {
-              const rt = mkRoutine(r)
-              return (
-                <div
-                  key={r.name}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 16,
-                    padding: '15px 0',
-                    borderBottom: '1px solid var(--line-soft)',
-                  }}
-                >
-                  <button
-                    type="button"
-                    className="hs-checkbox lg"
-                    onClick={rt.toggle}
-                    style={{ borderColor: rt.boxBorder, background: rt.boxBg }}
-                  >
-                    <span
-                      className="hs-checkbox-tick"
-                      style={{ animation: rt.tickAnim }}
-                    >
-                      {rt.check}
-                    </span>
-                  </button>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontSize: 15,
-                        fontWeight: 500,
-                        color: rt.color,
-                        textDecoration: rt.deco,
-                      }}
-                    >
-                      {r.name}
-                    </div>
-                    <div className="hs-row-sub">
-                      {r.period} · {rt.time} {rt.suffix}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 5, flex: 'none' }}>
-                    {rt.weekDots.map((wd, wi) => (
-                      <div
-                        key={wi}
-                        style={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: '50%',
-                          background: wd.bg,
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 5,
-                      width: 44,
-                      justifyContent: 'flex-end',
-                      flex: 'none',
-                    }}
-                  >
-                    <span style={{ color: rt.streakColor, fontSize: 10 }}>
-                      ▲
-                    </span>
-                    <span
-                      style={{
-                        font: '500 14px "IBM Plex Mono",monospace',
-                        color: rt.streakColor,
-                      }}
-                    >
-                      {rt.streakLabel}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    title="Edit"
-                    className="hs-row-action"
-                    onClick={rt.edit}
-                    style={{ opacity: rt.delOpacity }}
-                  >
-                    ✎
-                  </button>
-                  <button
-                    type="button"
-                    title="Remove"
-                    className="hs-row-action"
-                    onClick={rt.del}
-                    style={{ opacity: rt.delOpacity }}
-                  >
-                    ✕
-                  </button>
-                </div>
-              )
-            })}
+            {routines.map((r) => (
+              <RoutineRow
+                key={r.name}
+                rt={mkRoutine(r)}
+                sub="period-and-time"
+              />
+            ))}
           </div>
         )}
       </div>
@@ -380,19 +150,10 @@ export default function Routines({ vm }: { vm: HomeState }) {
       <div className="hs-rail narrow">
         <div>
           <div className="hs-section-label">TODAY</div>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'baseline',
-              gap: 8,
-              marginTop: 14,
-            }}
-          >
-            <div style={{ font: '500 32px "IBM Plex Mono",monospace' }}>
+          <div className="hs-big-stat">
+            <div className="hs-big-stat-value">
               {routinesDone}
-              <span style={{ color: 'var(--muted)', fontSize: 19 }}>
-                /{routinesTotal}
-              </span>
+              <span className="hs-big-stat-total">/{routinesTotal}</span>
             </div>
             <div style={{ fontSize: 12, color: 'var(--text-2)' }}>complete</div>
           </div>
@@ -400,44 +161,23 @@ export default function Routines({ vm }: { vm: HomeState }) {
             <div className="hs-bar-fill" style={{ width: routinePct }} />
           </div>
         </div>
+
         <div style={{ display: 'flex', gap: 14 }}>
-          <div className="hs-stat-tile">
-            <div className="hs-stat-label">CONSISTENCY</div>
-            <div className="hs-stat-value">{consistencyPct}</div>
-            <div
-              style={{
-                font: '400 9px "IBM Plex Mono",monospace',
-                color: 'var(--muted)',
-              }}
-            >
-              THIS WEEK
-            </div>
-          </div>
-          <div className="hs-stat-tile">
-            <div className="hs-stat-label">BEST STREAK</div>
-            <div className="hs-stat-value" style={{ color: 'var(--positive)' }}>
-              {bestStreak}
-            </div>
-            <div
-              style={{
-                font: '400 9px "IBM Plex Mono",monospace',
-                color: 'var(--muted)',
-              }}
-            >
-              DAYS
-            </div>
-          </div>
+          <StatTile
+            label="CONSISTENCY"
+            value={consistencyPct}
+            unit="THIS WEEK"
+          />
+          <StatTile
+            label="BEST STREAK"
+            value={bestStreak}
+            unit="DAYS"
+            positive
+          />
         </div>
+
         <div>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              borderBottom: '1px solid var(--line)',
-              paddingBottom: 8,
-            }}
-          >
+          <div className="hs-group-head">
             <div
               className="hs-section-label"
               style={{ border: 'none', padding: 0 }}
@@ -446,53 +186,20 @@ export default function Routines({ vm }: { vm: HomeState }) {
             </div>
             <div style={{ display: 'flex', gap: 3 }}>
               {DOW.map((d, i) => (
-                <div
-                  key={i}
-                  style={{
-                    width: 14,
-                    textAlign: 'center',
-                    font: '500 8px "IBM Plex Mono",monospace',
-                    color: 'var(--muted-2)',
-                  }}
-                >
+                <div key={i} className="hs-dow-head">
                   {d}
                 </div>
               ))}
             </div>
           </div>
           {routines.map((r) => (
-            <div
-              key={r.name}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '7px 0',
-              }}
-            >
-              <div
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                  fontSize: 11.5,
-                  color: 'var(--text-2)',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {r.name}
-              </div>
+            <div key={r.name} className="hs-heat-row">
+              <div className="hs-heat-name">{r.name}</div>
               <div style={{ display: 'flex', gap: 3, flex: 'none' }}>
                 {(r.week || []).map((v, wi) => (
                   <div
                     key={wi}
-                    style={{
-                      width: 14,
-                      height: 14,
-                      borderRadius: 3,
-                      background: v ? accent : 'var(--track)',
-                    }}
+                    className={`hs-heat-cell${v ? ' is-on' : ''}`}
                   />
                 ))}
               </div>

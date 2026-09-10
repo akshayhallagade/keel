@@ -358,8 +358,56 @@
   border-radius: 4px;
   font-size: 10px;
 }
+.hs-checkbox.sm {
+  width: 14px;
+  height: 14px;
+}
 .hs-checkbox-tick {
   display: block;
+}
+.hs-checkbox.is-checked {
+  border-color: var(--ink);
+  background: var(--ink);
+}
+
+/* A row on its way out: fades and slides while the tick pops in. This was six
+   inline style properties computed in the state layer. */
+.hs-row.is-completing {
+  opacity: 0.35;
+  transform: translateX(6px);
+}
+.hs-row.is-completing .hs-row-title {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.hs-row.is-completing .hs-checkbox-tick {
+  animation: tickIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.hs-row.is-top-ruled {
+  border-top: 1px solid var(--line-soft);
+  border-bottom: none;
+}
+
+/* Row buttons appear on hover. Scoped to .hs-row because .hs-row-action is
+   also used on hobby, routine and project rows that show it unconditionally.
+   :focus-visible is here so the buttons are reachable by keyboard, which the
+   hover-tracking React state this replaces never allowed. */
+.hs-row .hs-star-btn,
+.hs-row .hs-row-action {
+  opacity: 0;
+}
+.hs-row:hover .hs-star-btn,
+.hs-row:hover .hs-row-action,
+.hs-row .hs-star-btn:focus-visible,
+.hs-row .hs-row-action:focus-visible,
+.hs-row .hs-star-btn.is-on {
+  opacity: 1;
+}
+.hs-row .hs-star-btn {
+  color: var(--check-border);
+}
+.hs-row .hs-star-btn.is-on {
+  color: var(--accent);
 }
 .hs-row-body {
   flex: 1;
@@ -397,6 +445,404 @@
   border: none;
   padding: 2px 3px;
   transition: opacity 0.15s ease;
+}
+
+/* ---------- Routines ---------- */
+.hs-routine-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.hs-routine-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+}
+.hs-routine-body {
+  flex: 1;
+  min-width: 0;
+}
+.hs-routine-title {
+  font-size: 15px;
+  font-weight: 500;
+}
+.hs-routine-line .hs-routine-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 400;
+}
+.hs-routine-title.is-missed {
+  color: var(--accent);
+}
+/* Done wins over missed: a routine you have just completed is not also late. */
+.hs-routine-title.is-done {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.hs-missed {
+  font: 400 9px var(--mono);
+}
+
+.hs-week-dots {
+  display: flex;
+  gap: 5px;
+  flex: none;
+}
+.hs-week-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--line);
+}
+.hs-week-dot.is-on {
+  background: var(--accent);
+}
+
+.hs-streak {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 44px;
+  justify-content: flex-end;
+  flex: none;
+  color: var(--positive);
+}
+.hs-streak.is-zero {
+  color: var(--check-border);
+}
+.hs-streak-arrow {
+  font-size: 10px;
+}
+.hs-streak-value {
+  font: 500 14px var(--mono);
+}
+
+/* Routine rows reveal their actions the same way todo rows do. */
+.hs-routine-row .hs-row-action {
+  opacity: 0;
+}
+.hs-routine-row:hover .hs-row-action,
+.hs-routine-row .hs-row-action:focus-visible {
+  opacity: 1;
+}
+
+/* ---------- Hobbies ---------- */
+.hs-hobby-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line-soft);
+  animation: rowIn 0.35s ease backwards;
+}
+.hs-hobby-row.is-try {
+  gap: 14px;
+  padding: 12px 0;
+}
+.hs-hobby-body {
+  flex: 1;
+  min-width: 0;
+}
+.hs-hobby-name {
+  font-size: 15px;
+  font-weight: 500;
+}
+.hs-hobby-try-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--text-2);
+}
+.hs-hobby-count {
+  font: 500 13px var(--mono);
+  color: var(--text-2);
+  flex: none;
+}
+.hs-hobby-count-unit {
+  font-size: 9px;
+  color: var(--muted);
+}
+.hs-hobby-cta {
+  font: 400 10px var(--mono);
+  color: var(--accent);
+  cursor: pointer;
+  flex: none;
+  background: none;
+  border: none;
+}
+/* Same hover-reveal as todo and routine rows. Was a `hoverHobby` state that
+   re-rendered the whole screen on every pointer move across the list. */
+.hs-hobby-row .hs-row-action {
+  flex: none;
+  opacity: 0;
+}
+.hs-hobby-row:hover .hs-row-action,
+.hs-hobby-row .hs-row-action:focus-visible {
+  opacity: 1;
+}
+
+.hs-delta-row {
+  font: 400 10px var(--mono);
+  color: var(--positive);
+  margin-top: 8px;
+}
+.hs-split-bar {
+  display: flex;
+  height: 10px;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 14px;
+  transform-origin: left;
+  animation: barGrow 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.2s backwards;
+}
+.hs-split-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+.hs-split-legend-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.hs-split-pct {
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+/* ---------- Today ---------- */
+.hs-open-spot {
+  flex: 1;
+  font-size: 14.5px;
+  font-style: italic;
+  color: var(--muted);
+}
+.hs-agenda-row {
+  display: flex;
+  gap: 18px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.hs-agenda-time {
+  font: 400 11px var(--mono);
+  color: var(--muted);
+  width: 66px;
+  flex: none;
+  padding-top: 2px;
+}
+.hs-agenda-what {
+  font-size: 14px;
+  font-weight: 500;
+}
+.hs-agenda-sub {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+/* Label/number pair in a rail, e.g. "Spent  ₹42,180". */
+.hs-rail-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 12px;
+}
+.hs-rail-stat-label {
+  font-size: 13px;
+  color: var(--text-2);
+}
+.hs-rail-stat-value {
+  font: 500 14px var(--mono);
+}
+.hs-delta-up {
+  color: var(--positive);
+  font-size: 11px;
+}
+.hs-quote-body {
+  font-size: 15.5px;
+  line-height: 1.5;
+  margin-top: 12px;
+  color: var(--ink-2);
+}
+
+/* A section heading with a note or a legend opposite it. */
+.hs-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 28px 0 2px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+.hs-rail .hs-group-head {
+  margin: 0 0 2px;
+}
+.hs-group-head-note {
+  font: 500 9px var(--mono);
+  letter-spacing: 0.1em;
+  color: var(--muted-2);
+}
+
+/* Joined pair of view-switch buttons (GROUPED | FLAT). */
+.hs-segmented {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.hs-segment {
+  font: 500 9px var(--mono);
+  letter-spacing: 0.08em;
+  padding: 7px 12px;
+  cursor: pointer;
+  border: none;
+  color: var(--text-2);
+  background: var(--input-bg);
+}
+.hs-segment.is-active {
+  color: var(--paper);
+  background: var(--accent);
+}
+
+.hs-add-row-dashed {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.hs-add-dash-box {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  border: 1.5px dashed var(--muted-2);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  font-size: 12px;
+}
+
+.hs-stat-unit {
+  font: 400 9px var(--mono);
+  color: var(--muted);
+}
+
+.hs-big-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 14px;
+}
+.hs-big-stat-value {
+  font: 500 32px var(--mono);
+}
+.hs-big-stat-total {
+  color: var(--muted);
+  font-size: 19px;
+}
+
+/* Week heat-map in the routines rail. */
+.hs-dow-head {
+  width: 14px;
+  text-align: center;
+  font: 500 8px var(--mono);
+  color: var(--muted-2);
+}
+.hs-heat-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+}
+.hs-heat-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 11.5px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hs-heat-cell {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--track);
+}
+.hs-heat-cell.is-on {
+  background: var(--accent);
+}
+
+/* ---------- Filter tabs ---------- */
+.hs-tabs {
+  display: flex;
+  gap: 22px;
+  margin: 18px 0 22px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 10px;
+}
+.hs-tab {
+  font: 500 10px var(--mono);
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  padding-bottom: 10px;
+  margin-bottom: -11px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+}
+.hs-tab.is-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* A label/value line in a side rail. The single most repeated block in the
+   screens — it was eight inline properties every time. */
+.hs-rail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 13px;
+  color: var(--text-2);
+}
+.hs-rail-row:last-child {
+  border-bottom: none;
+}
+
+/* ---------- Completed list ---------- */
+.hs-done-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+.hs-done-check {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  background: var(--ink);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--paper);
+  font-size: 9px;
+}
+.hs-done-text {
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: line-through;
 }
 
 /* ---------- Progress bars ---------- */

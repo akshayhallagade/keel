@@ -1,79 +1,39 @@
 import type { HomeState } from '../useHomeState'
+import type { Todo } from '../types'
+import TodoRow from '../rows/TodoRow'
 
 const FILTERS = ['ALL', 'TODAY', 'THIS WEEK', 'SOMEDAY']
 
 const AREA_ROWS = [
   { name: 'Finance', color: 'var(--accent)', count: 4 },
-  { name: 'Home', color: '#C0913C', count: 3 },
-  { name: 'Health', color: '#5B7B4F', count: 3 },
-  { name: 'Projects', color: '#5A6E8C', count: 5 },
+  { name: 'Home', color: 'var(--warn)', count: 3 },
+  { name: 'Health', color: 'var(--positive)', count: 3 },
+  { name: 'Projects', color: 'var(--info)', count: 5 },
 ]
 
-function TodoRow({
-  td,
-  showDot,
+function Group({
+  label,
+  items,
+  mkRow,
+  first,
 }: {
-  td: ReturnType<HomeState['mkRow']>
-  showDot: boolean
+  label: string
+  items: Todo[]
+  mkRow: HomeState['mkRow']
+  first: boolean
 }) {
   return (
-    <div
-      onMouseEnter={td.onEnter}
-      onMouseLeave={td.onLeave}
-      className="hs-row"
-      style={{
-        borderTop: '1px solid var(--line-soft)',
-        borderBottom: 'none',
-        opacity: td.opacity,
-        transform: td.shift,
-        animationDelay: td.delay,
-      }}
-    >
-      <button
-        type="button"
-        className="hs-checkbox"
-        onClick={td.toggle}
-        style={{ borderColor: td.boxBorder, background: td.boxBg }}
+    <>
+      <div
+        className="hs-section-label"
+        style={{ border: 'none', paddingTop: first ? undefined : 22 }}
       >
-        <span className="hs-checkbox-tick" style={{ animation: td.tickAnim }}>
-          {td.check}
-        </span>
-      </button>
-      <div className="hs-row-body">
-        <div
-          className="hs-row-title"
-          style={{
-            fontWeight: showDot ? 500 : 400,
-            color: td.textColor,
-            textDecoration: td.deco,
-          }}
-        >
-          {td.text}
-        </div>
-        <div className="hs-row-sub">
-          {showDot && <span style={{ color: td.dotColor }}>●</span>} {td.tag}{' '}
-          &nbsp; {td.due}
-        </div>
+        {label} · {items.length}
       </div>
-      <button
-        type="button"
-        title="Add to Top 3"
-        className="hs-star-btn"
-        onClick={td.starToggle}
-        style={{ color: td.starColor, opacity: td.starOpacity }}
-      >
-        {td.starGlyph}
-      </button>
-      <button
-        type="button"
-        title="Edit"
-        className="hs-row-action"
-        onClick={td.edit}
-        style={{ opacity: td.editOpacity }}
-      >
-        ✎
-      </button>
-    </div>
+      {items.map((t, i) => (
+        <TodoRow key={t.text} td={mkRow(t, i)} topRuled />
+      ))}
+    </>
   )
 }
 
@@ -93,10 +53,12 @@ export default function Todos({ vm }: { vm: HomeState }) {
     todos,
   } = vm
 
-  const fToday = filter === 'ALL' || filter === 'TODAY'
-  const fWeek = filter === 'ALL' || filter === 'THIS WEEK'
-  const fSomeday = filter === 'ALL' || filter === 'SOMEDAY'
   const doneCount = 2 + done.length
+  const groups = [
+    { label: 'TODAY', items: todayList },
+    { label: 'THIS WEEK', items: weekList },
+    { label: 'SOMEDAY', items: somedayList },
+  ].filter((g) => filter === 'ALL' || filter === g.label)
 
   return (
     <div className="hs-screen with-rail">
@@ -107,79 +69,30 @@ export default function Todos({ vm }: { vm: HomeState }) {
             {todos.length} OPEN · {doneCount} DONE TODAY
           </div>
         </div>
-        <div
-          style={{
-            display: 'flex',
-            gap: 22,
-            margin: '18px 0 22px',
-            borderBottom: '1px solid var(--line)',
-            paddingBottom: 10,
-          }}
-        >
-          {FILTERS.map((name) => {
-            const active = filter === name
-            return (
-              <button
-                type="button"
-                key={name}
-                onClick={() => setFilter(name)}
-                style={{
-                  font: '500 10px "IBM Plex Mono",monospace',
-                  letterSpacing: '.1em',
-                  color: active ? 'var(--accent)' : 'var(--muted)',
-                  borderBottom: `2px solid ${active ? 'var(--accent)' : 'transparent'}`,
-                  paddingBottom: 10,
-                  marginBottom: -11,
-                  cursor: 'pointer',
-                  background: 'none',
-                  border: 'none',
-                  borderBottomWidth: 2,
-                  borderBottomStyle: 'solid',
-                  borderBottomColor: active ? 'var(--accent)' : 'transparent',
-                }}
-              >
-                {name}
-              </button>
-            )
-          })}
+
+        <div className="hs-tabs">
+          {FILTERS.map((name) => (
+            <button
+              type="button"
+              key={name}
+              onClick={() => setFilter(name)}
+              aria-pressed={filter === name}
+              className={`hs-tab${filter === name ? ' is-active' : ''}`}
+            >
+              {name}
+            </button>
+          ))}
         </div>
 
-        {fToday && (
-          <>
-            <div className="hs-section-label" style={{ border: 'none' }}>
-              TODAY · {todayList.length}
-            </div>
-            {todayList.map((t, i) => (
-              <TodoRow key={t.text} td={mkRow(t, i)} showDot />
-            ))}
-          </>
-        )}
-        {fWeek && (
-          <>
-            <div
-              className="hs-section-label"
-              style={{ border: 'none', paddingTop: 22 }}
-            >
-              THIS WEEK · {weekList.length}
-            </div>
-            {weekList.map((t, i) => (
-              <TodoRow key={t.text} td={mkRow(t, i)} showDot />
-            ))}
-          </>
-        )}
-        {fSomeday && (
-          <>
-            <div
-              className="hs-section-label"
-              style={{ border: 'none', paddingTop: 22 }}
-            >
-              SOMEDAY · {somedayList.length}
-            </div>
-            {somedayList.map((t, i) => (
-              <TodoRow key={t.text} td={mkRow(t, i)} showDot />
-            ))}
-          </>
-        )}
+        {groups.map((g, i) => (
+          <Group
+            key={g.label}
+            label={g.label}
+            items={g.items}
+            mkRow={mkRow}
+            first={i === 0}
+          />
+        ))}
 
         <div className="hs-add-row">
           <div className="hs-add-plus">+</div>
@@ -204,16 +117,8 @@ export default function Todos({ vm }: { vm: HomeState }) {
         <div>
           <div className="hs-section-label">BY AREA</div>
           {AREA_ROWS.map((a) => (
-            <div
-              key={a.name}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                padding: '9px 0',
-                borderBottom: '1px solid var(--line-soft)',
-              }}
-            >
-              <div style={{ fontSize: 13, color: 'var(--text-2)' }}>
+            <div key={a.name} className="hs-rail-row">
+              <div>
                 <span style={{ color: a.color }}>●</span> {a.name}
               </div>
               <div className="hs-meta-sm">{a.count}</div>
@@ -223,40 +128,9 @@ export default function Todos({ vm }: { vm: HomeState }) {
         <div>
           <div className="hs-section-label">DONE TODAY · {doneCount}</div>
           {done.map((dn) => (
-            <div
-              key={dn.text}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '8px 0',
-              }}
-            >
-              <div
-                style={{
-                  width: 14,
-                  height: 14,
-                  background: 'var(--ink)',
-                  borderRadius: 3,
-                  flex: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--paper)',
-                  fontSize: 9,
-                }}
-              >
-                ✓
-              </div>
-              <div
-                style={{
-                  fontSize: 13,
-                  color: 'var(--muted)',
-                  textDecoration: 'line-through',
-                }}
-              >
-                {dn.text}
-              </div>
+            <div key={dn.text} className="hs-done-row">
+              <div className="hs-done-check">✓</div>
+              <div className="hs-done-text">{dn.text}</div>
             </div>
           ))}
         </div>

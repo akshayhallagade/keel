@@ -81,7 +81,6 @@ export function useHomeState(user: User, onSignOut: () => void) {
   const [todoPanel, setTodoPanel] = useState<TodoPanelState | null>(null)
   const [filter, setFilter] = useState('ALL')
   const [animFlip, setAnimFlip] = useState(false)
-  const [hoverRow, setHoverRow] = useState<number | null>(null)
   const [openProject, setOpenProject] = useState<string | null>(null)
   const [projTaskDraft, setProjTaskDraft] = useState('')
   const [expandedProjects, setExpandedProjects] = useState<
@@ -115,7 +114,6 @@ export function useHomeState(user: User, onSignOut: () => void) {
     EVENING: '',
     BEDTIME: '',
   })
-  const [hoverRoutine, setHoverRoutine] = useState<string | null>(null)
   const [projectDraft, setProjectDraft] = useState('')
   const [routinesView, setRoutinesView] = useState<'grouped' | 'flat'>(
     'grouped',
@@ -138,7 +136,6 @@ export function useHomeState(user: User, onSignOut: () => void) {
   const [hobbyTry, setHobbyTry] = useState(SEED_HOBBY_TRY)
   const [hobbyDraft, setHobbyDraft] = useState('')
   const [hPanel, setHPanelState] = useState<HobbyPanelState | null>(null)
-  const [hoverHobby, setHoverHobby] = useState<string | null>(null)
   const [cPanel, setCPanelState] = useState<CreatePanelState | null>(null)
   const [newGoals, setNewGoals] = useState<{ name: string; target: string }[]>(
     [],
@@ -252,52 +249,34 @@ export function useHomeState(user: User, onSignOut: () => void) {
     setProjPanelState((s) => (s ? { ...s, ...patch } : s))
   }, [])
 
+  /// Builds what a todo row needs: its data, and what its three buttons do.
+  /// Everything about how it *looks* — the tick, the strikethrough, the fade
+  /// while completing, the hover-revealed star and pencil — belongs to
+  /// TodoRow and Home.css, which is why none of it appears here.
   const mkRow = useCallback(
     (t: Todo, idx: number) => {
       const i = todos.indexOf(t)
-      const c = !!t.completing
-      const hov = hoverRow === i
+      const isSame = (x: Todo) => x.text === t.text && x.group === t.group
       return {
         text: t.text,
         tag: t.tag,
         due: fmtDue(t.due),
-        starGlyph: t.star ? '★' : '☆',
-        starColor: t.star ? 'var(--accent)' : 'var(--check-border)',
-        starOpacity: t.star || hov ? 1 : 0,
-        editOpacity: hov ? 1 : 0,
+        star: !!t.star,
+        completing: !!t.completing,
+        dotColor: DOT_COLORS[t.tag] || 'var(--check-border)',
+        /// Position in its own list, used only to stagger the entrance.
+        index: idx || 0,
         starToggle: () =>
           setTodos((s) =>
-            s.map((x) =>
-              x.text === t.text && x.group === t.group
-                ? { ...x, star: !x.star }
-                : x,
-            ),
+            s.map((x) => (isSame(x) ? { ...x, star: !x.star } : x)),
           ),
-        onEnter: () => setHoverRow(i),
-        onLeave: () => setHoverRow(null),
-        dotColor: DOT_COLORS[t.tag] || 'var(--check-border)',
-        check: c ? '✓' : '',
-        boxBorder: c ? 'var(--ink)' : 'var(--check-border)',
-        boxBg: c ? 'var(--ink)' : 'transparent',
-        textColor: c ? 'var(--muted)' : 'var(--ink)',
-        deco: c ? 'line-through' : 'none',
-        opacity: c ? 0.35 : 1,
-        shift: c ? 'translateX(6px)' : 'none',
-        delay: (idx || 0) * 0.05 + 's',
-        tickAnim: c ? 'tickIn .3s cubic-bezier(.34,1.56,.64,1) both' : 'none',
         toggle: () => {
           if (t.completing) return
           setTodos((s) =>
-            s.map((x) =>
-              x.text === t.text && x.group === t.group
-                ? { ...x, completing: true }
-                : x,
-            ),
+            s.map((x) => (isSame(x) ? { ...x, completing: true } : x)),
           )
           setTimeout(() => {
-            setTodos((s) =>
-              s.filter((x) => !(x.text === t.text && x.group === t.group)),
-            )
+            setTodos((s) => s.filter((x) => !isSame(x)))
             setDone((s) => [{ text: t.text }, ...s])
           }, 700)
         },
@@ -312,7 +291,7 @@ export function useHomeState(user: User, onSignOut: () => void) {
           }),
       }
     },
-    [todos, hoverRow],
+    [todos],
   )
 
   const todayList = todos.filter((t) => t.group === 'TODAY')
@@ -417,53 +396,42 @@ export function useHomeState(user: User, onSignOut: () => void) {
     setDraft('')
   }
 
-  const mkRoutine = useCallback(
-    (r: Routine) => {
-      const on = !!r.done
-      return {
-        name: r.name,
-        check: on ? '✓' : '',
-        boxBorder: on ? 'var(--ink)' : 'var(--check-border)',
-        boxBg: on ? 'var(--ink)' : 'transparent',
-        color: on ? 'var(--muted)' : r.missed ? accent : 'var(--ink)',
-        deco: on ? 'line-through' : 'none',
-        suffix: !on && r.missed ? '· △ MISSED' : '',
-        time: r.time || '',
-        streakLabel: r.streak > 0 ? String(r.streak) : '—',
-        streakColor: r.streak > 0 ? 'var(--positive)' : 'var(--check-border)',
-        weekDots: (r.week || []).map((v) => ({
-          bg: v ? accent : 'var(--line)',
-        })),
-        tickAnim: on ? 'tickIn .3s cubic-bezier(.34,1.56,.64,1) both' : 'none',
-        delOpacity: hoverRoutine === r.name ? 1 : 0,
-        onEnter: () => setHoverRoutine(r.name),
-        onLeave: () => setHoverRoutine(null),
-        del: () => setConfirmDel({ kind: 'routine', name: r.name }),
-        edit: () => {
-          const parsed = parseRTime(r.time) || {
-            hour: r.period === 'EVENING' ? 8 : 7,
-            minIdx: 0,
-            ampm: (r.period === 'EVENING' ? 'PM' : 'AM') as 'AM' | 'PM',
-          }
-          setRPanelState({
-            orig: r.name,
-            name: r.name,
-            time: r.time || '',
-            period: r.period,
-            timeSet: !!(r.time && r.time.trim()),
-            hour: parsed.hour,
-            minIdx: parsed.minIdx,
-            ampm: parsed.ampm,
-          })
-        },
-        toggle: () =>
-          setRoutines((s) =>
-            s.map((x) => (x.name === r.name ? { ...x, done: !x.done } : x)),
-          ),
-      }
-    },
-    [accent, hoverRoutine],
-  )
+  /// Like mkRow: the routine's data and its actions, no CSS. Whether it reads
+  /// as done, missed or on a streak is decided by RoutineRow's classes.
+  const mkRoutine = useCallback((r: Routine) => {
+    return {
+      name: r.name,
+      period: r.period,
+      done: !!r.done,
+      /// Only meaningful when not done — a completed routine is not missed.
+      missed: !r.done && !!r.missed,
+      time: r.time || '',
+      streak: r.streak,
+      week: r.week || [],
+      del: () => setConfirmDel({ kind: 'routine', name: r.name }),
+      edit: () => {
+        const parsed = parseRTime(r.time) || {
+          hour: r.period === 'EVENING' ? 8 : 7,
+          minIdx: 0,
+          ampm: (r.period === 'EVENING' ? 'PM' : 'AM') as 'AM' | 'PM',
+        }
+        setRPanelState({
+          orig: r.name,
+          name: r.name,
+          time: r.time || '',
+          period: r.period,
+          timeSet: !!(r.time && r.time.trim()),
+          hour: parsed.hour,
+          minIdx: parsed.minIdx,
+          ampm: parsed.ampm,
+        })
+      },
+      toggle: () =>
+        setRoutines((s) =>
+          s.map((x) => (x.name === r.name ? { ...x, done: !x.done } : x)),
+        ),
+    }
+  }, [])
 
   const setRDraft = (type: string, val: string) =>
     setRoutineDrafts((s) => ({ ...s, [type]: val }))
@@ -812,8 +780,6 @@ export function useHomeState(user: User, onSignOut: () => void) {
     setHobbyDraft,
     hPanel,
     setHPanelState,
-    hoverHobby,
-    setHoverHobby,
     // create panel
     cPanel,
     setCPanelState,
