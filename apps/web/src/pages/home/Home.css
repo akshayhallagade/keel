@@ -653,6 +653,179 @@
   flex: none;
 }
 
+/* ---------- Alarms ---------- */
+.hs-alarm-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line-soft);
+  transition: opacity 0.25s ease;
+  animation: rowIn 0.35s ease backwards;
+}
+/* A switched-off alarm dims as a whole rather than recolouring each part. */
+.hs-alarm-row.is-off,
+.hs-dial-tile.is-off {
+  opacity: 0.45;
+}
+.hs-alarm-time {
+  font: 500 30px var(--mono);
+  width: 150px;
+  flex: none;
+}
+.hs-alarm-ampm {
+  font-size: 14px;
+  color: var(--muted);
+}
+.hs-alarm-label {
+  font-size: 14.5px;
+  font-weight: 500;
+}
+
+.hs-dial-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 38px 32px;
+}
+.hs-dial-tile {
+  width: 270px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 28px 18px;
+  background: var(--input-bg);
+  border: 1px solid var(--line);
+  transition: opacity 0.25s ease;
+  animation: rowIn 0.35s ease backwards;
+}
+.hs-dial-time {
+  font: 600 26px var(--mono);
+}
+.hs-dial-ampm {
+  font: 500 11px var(--mono);
+  color: var(--muted);
+}
+.hs-dial-foot {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+}
+.hs-dial-label {
+  font-size: 13.5px;
+  font-weight: 500;
+}
+.hs-dial-days {
+  font: 400 9px var(--mono);
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* Toggle sizes. The knob offset is width - knob - 2px of padding. */
+.hs-toggle-track.lg {
+  width: 36px;
+  height: 20px;
+}
+.hs-toggle-track.lg.is-on .hs-toggle-knob {
+  left: 18px;
+}
+.hs-toggle-track.sm {
+  width: 30px;
+  height: 17px;
+}
+.hs-toggle-track.sm .hs-toggle-knob {
+  width: 13px;
+  height: 13px;
+}
+.hs-toggle-track.sm.is-on .hs-toggle-knob {
+  left: 15px;
+}
+
+.hs-alarm-editor {
+  position: fixed;
+  inset: 0;
+  background: var(--paper);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 34px;
+  animation: screenIn 0.3s ease both;
+}
+.hs-editor-close {
+  position: absolute;
+  top: 32px;
+  right: 36px;
+  font: 400 13px var(--mono);
+  color: var(--muted);
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+.hs-editor-days {
+  font: 400 10px var(--mono);
+  color: var(--muted);
+  margin-top: 6px;
+  letter-spacing: 0.08em;
+}
+.hs-editor-time {
+  font: 600 44px var(--mono);
+}
+.hs-clock-numeral {
+  font: 600 16px var(--mono);
+  fill: var(--ink);
+}
+.hs-btn-ink {
+  font: 500 13px var(--mono);
+  letter-spacing: 0.1em;
+  color: var(--paper);
+  background: var(--ink);
+  padding: 9px 14px;
+  cursor: pointer;
+  border: none;
+}
+.hs-btn-accent.lg {
+  padding: 13px 26px;
+  font-size: 11px;
+}
+/* Square-cornered segmented control with ink fill, used by the alarm views. */
+.hs-segmented.is-square {
+  border-radius: 0;
+}
+.hs-segment.is-ink {
+  background: transparent;
+}
+.hs-segment.is-ink.is-active {
+  background: var(--ink);
+  color: var(--paper);
+}
+.hs-segmented.is-square .hs-segment + .hs-segment {
+  border-left: 1px solid var(--line);
+}
+
+/* ---------- Reminders ---------- */
+.hs-reminder-row {
+  display: flex;
+  gap: 18px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line-soft);
+  animation: rowIn 0.35s ease backwards;
+}
+.hs-reminder-when {
+  font: 400 11px var(--mono);
+  color: var(--muted);
+  width: 76px;
+  flex: none;
+  padding-top: 2px;
+}
+.hs-reminder-when.is-accent {
+  color: var(--accent);
+}
+
 /* ---------- Money ---------- */
 /* The rule-topped summary strip at the head of Investments and Accounts. */
 .hs-stat-strip {
@@ -731,6 +904,205 @@
 }
 
 /* ---------- Projects ---------- */
+.hs-project-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-flow: dense;
+  gap: 16px;
+}
+.hs-project-card {
+  border: 1px solid var(--line);
+  background: var(--input-bg);
+  border-radius: 8px;
+  padding: 16px 18px;
+  min-width: 0;
+  animation: rowIn 0.35s ease backwards;
+}
+/* A pinned card is twice as tall and puts its padding on an inner element so
+   the photo can bleed to the edges. */
+.hs-project-card.is-pinned {
+  grid-row: span 2;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.hs-project-card-body {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.hs-project-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+.hs-project-head.is-wrapped {
+  flex-wrap: wrap;
+}
+.hs-project-tag {
+  font: 500 8px var(--mono);
+  letter-spacing: 0.12em;
+  color: var(--accent);
+}
+.hs-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  flex-wrap: wrap;
+}
+.hs-row-action.is-tiny {
+  font-size: 8px;
+  letter-spacing: 0.08em;
+}
+.hs-project-name {
+  font-size: 14.5px;
+  font-weight: 600;
+  margin-top: 7px;
+}
+.hs-project-name.is-large {
+  font-size: 17px;
+  margin-top: 8px;
+}
+.hs-project-next {
+  border-top: 1px solid var(--line-soft);
+  margin-top: 12px;
+  padding-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hs-project-next.is-split {
+  justify-content: space-between;
+}
+.hs-project-next-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.hs-project-next-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.hs-project-counts {
+  display: flex;
+  justify-content: space-between;
+  font: 500 10px var(--mono);
+  color: var(--text-2);
+  margin-bottom: 6px;
+}
+.hs-project-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+.hs-project-cta {
+  font: 500 9px var(--mono);
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+.hs-bar-fill.is-eased {
+  border-radius: 2px;
+  background: var(--accent);
+  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hs-open-tasks {
+  border-top: 1px solid var(--line-soft);
+  margin-top: 10px;
+  padding-top: 4px;
+}
+.hs-open-task {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+.hs-open-task-text {
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+.hs-mini-box {
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid var(--check-border);
+  border-radius: 3px;
+  flex: none;
+  cursor: pointer;
+  background: none;
+  padding: 0;
+}
+
+.hs-paused-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.hs-paused-name {
+  font-size: 14px;
+  color: var(--text-3);
+}
+
+/* ---------- Project detail ---------- */
+.hs-back-link {
+  font: 500 10px var(--mono);
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  cursor: pointer;
+  margin-bottom: 18px;
+  background: none;
+  border: none;
+  padding: 0;
+}
+.hs-detail-tag {
+  font: 500 9px var(--mono);
+  letter-spacing: 0.14em;
+  color: var(--accent);
+}
+.hs-detail-name {
+  font-size: 30px;
+  font-weight: 500;
+  margin-top: 8px;
+  line-height: 1.15;
+}
+.hs-detail-task {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.hs-detail-task-text {
+  font-size: 14px;
+}
+.hs-detail-task-text.is-done {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.hs-checkbox.md {
+  width: 16px;
+  height: 16px;
+}
+.hs-add-dash-box.md {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
 .hs-next-task {
   font-size: 13px;
   color: var(--ink);

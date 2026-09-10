@@ -1,11 +1,13 @@
 import type { HomeState } from '../useHomeState'
+import type { ProjectTask } from '../types'
 
 type ProjectModel = HomeState['activeProjects'][number]
+type PinnedModel = HomeState['pinnedProjects'][number]
 
 /**
  * "Next: <task>" with a checkbox that ticks it off. When every task is done it
- * reads as complete instead. Both project card layouts show this; `truncate`
- * is the only thing that differs between them.
+ * reads as complete instead. Both card layouts show this; `truncate` is the
+ * only thing that differs between them.
  */
 function NextTask({
   p,
@@ -35,6 +37,58 @@ function NextTask({
   )
 }
 
+/// The small caps actions in a card's top-right corner.
+function CardActions({ actions }: { actions: [string, () => void][] }) {
+  return (
+    <div className="hs-card-actions">
+      {actions.map(([label, onClick]) => (
+        <button
+          key={label}
+          type="button"
+          className="hs-row-action is-tiny"
+          onClick={onClick}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/// The open-tasks list a card reveals when its chevron is clicked.
+function OpenTasks({ p }: { p: ProjectModel }) {
+  if (!p.expanded) return null
+  return (
+    <div className="hs-open-tasks">
+      {p.openTasks.map((ot) => (
+        <div key={ot.text} className="hs-open-task">
+          <button
+            type="button"
+            className="hs-mini-box"
+            onClick={ot.toggle}
+            aria-label={`Complete ${ot.text}`}
+          />
+          <div className="hs-open-task-text">{ot.text}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ExpandButton({ p }: { p: ProjectModel }) {
+  return (
+    <button
+      type="button"
+      title="Show next tasks"
+      aria-expanded={p.expanded}
+      className="hs-row-action"
+      onClick={p.toggleExpand}
+    >
+      {p.expanded ? '▴' : '▾'}
+    </button>
+  )
+}
+
 export default function Projects({ vm }: { vm: HomeState }) {
   const {
     activeProjects,
@@ -55,395 +109,100 @@ export default function Projects({ vm }: { vm: HomeState }) {
         </div>
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-          gridAutoFlow: 'dense',
-          gap: 16,
-        }}
-      >
-        {pinnedProjects.map((pp) => (
-          <div
-            key={pp.name}
-            style={{
-              gridRow: 'span 2',
-              border: '1px solid var(--line)',
-              background: 'var(--input-bg)',
-              borderRadius: 8,
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              minWidth: 0,
-              animation: 'rowIn .35s ease backwards',
-            }}
-          >
+      <div className="hs-project-grid">
+        {pinnedProjects.map((pp: PinnedModel) => (
+          <div key={pp.name} className="hs-project-card is-pinned">
             <div className="hs-image-slot">Photo</div>
-            <div
-              style={{
-                padding: '16px 18px',
-                display: 'flex',
-                flexDirection: 'column',
-                flex: 1,
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'baseline',
-                  gap: 10,
-                }}
-              >
-                <div
-                  style={{
-                    font: '500 8px "IBM Plex Mono",monospace',
-                    letterSpacing: '.12em',
-                    color: 'var(--accent)',
-                  }}
-                >
-                  {pp.tag} · PINNED
-                </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    flex: 'none',
-                  }}
-                >
-                  <button
-                    type="button"
-                    className="hs-row-action"
-                    style={{ fontSize: 8, letterSpacing: '.08em' }}
-                    onClick={pp.togglePin}
-                  >
-                    UNPIN
-                  </button>
-                  <button
-                    type="button"
-                    className="hs-row-action"
-                    style={{ fontSize: 8, letterSpacing: '.08em' }}
-                    onClick={pp.edit}
-                  >
-                    EDIT
-                  </button>
-                </div>
+            <div className="hs-project-card-body">
+              <div className="hs-project-head">
+                <div className="hs-project-tag">{pp.tag} · PINNED</div>
+                <CardActions
+                  actions={[
+                    ['UNPIN', pp.togglePin],
+                    ['EDIT', pp.edit],
+                  ]}
+                />
               </div>
-              <div style={{ fontSize: 17, fontWeight: 600, marginTop: 8 }}>
-                {pp.name}
-              </div>
-              <div
-                style={{
-                  borderTop: '1px solid var(--line-soft)',
-                  marginTop: 12,
-                  paddingTop: 10,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                }}
-              >
+
+              <div className="hs-project-name is-large">{pp.name}</div>
+
+              <div className="hs-project-next">
                 <NextTask p={pp} />
               </div>
+
               <div style={{ marginTop: 'auto', paddingTop: 14 }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    font: '500 10px "IBM Plex Mono",monospace',
-                    color: 'var(--text-2)',
-                    marginBottom: 6,
-                  }}
-                >
+                <div className="hs-project-counts">
                   <span>
                     {pp.done}/{pp.total} TASKS
                   </span>
                   <span>{pp.pctNum}</span>
                 </div>
-                <div
-                  style={{
-                    height: 4,
-                    background: 'var(--track)',
-                    borderRadius: 2,
-                  }}
-                >
+                <div className="hs-bar-track sm">
                   <div
-                    style={{
-                      width: pp.pct,
-                      height: '100%',
-                      background: 'var(--accent)',
-                      borderRadius: 2,
-                      transition: 'width .5s cubic-bezier(.22,1,.36,1)',
-                    }}
+                    className="hs-bar-fill is-eased"
+                    style={{ width: pp.pct }}
                   />
                 </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginTop: 12,
-                  }}
-                >
+                <div className="hs-project-foot">
                   <button
                     type="button"
-                    style={{
-                      font: '500 9px "IBM Plex Mono",monospace',
-                      letterSpacing: '.08em',
-                      color: 'var(--accent)',
-                      cursor: 'pointer',
-                      background: 'none',
-                      border: 'none',
-                    }}
+                    className="hs-project-cta"
                     onClick={pp.view}
                   >
                     ALL TASKS ({pp.openCount} OPEN) →
                   </button>
-                  <button
-                    type="button"
-                    title="Show next tasks"
-                    className="hs-row-action"
-                    onClick={pp.toggleExpand}
-                  >
-                    {pp.expanded ? '▴' : '▾'}
-                  </button>
+                  <ExpandButton p={pp} />
                 </div>
-                {pp.expanded && (
-                  <div
-                    style={{
-                      borderTop: '1px solid var(--line-soft)',
-                      marginTop: 10,
-                      paddingTop: 4,
-                    }}
-                  >
-                    {pp.openTasks.map((ot) => (
-                      <div
-                        key={ot.text}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          padding: '6px 0',
-                        }}
-                      >
-                        <button
-                          type="button"
-                          onClick={ot.toggle}
-                          style={{
-                            width: 13,
-                            height: 13,
-                            border: '1.5px solid var(--check-border)',
-                            borderRadius: 3,
-                            flex: 'none',
-                            cursor: 'pointer',
-                            background: 'none',
-                          }}
-                        />
-                        <div style={{ fontSize: 12.5, color: 'var(--text-2)' }}>
-                          {ot.text}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <OpenTasks p={pp} />
               </div>
             </div>
           </div>
         ))}
 
         {unpinnedActive.map((pj) => (
-          <div
-            key={pj.name}
-            style={{
-              border: '1px solid var(--line)',
-              background: 'var(--input-bg)',
-              borderRadius: 8,
-              padding: '16px 18px',
-              minWidth: 0,
-              animation: 'rowIn .35s ease backwards',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
-                gap: 10,
-                flexWrap: 'wrap',
-              }}
-            >
-              <div
-                style={{
-                  font: '500 8px "IBM Plex Mono",monospace',
-                  letterSpacing: '.12em',
-                  color: 'var(--accent)',
-                }}
-              >
-                {pj.tag}
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  flexWrap: 'wrap',
-                }}
-              >
-                <button
-                  type="button"
-                  className="hs-row-action"
-                  style={{ fontSize: 8, letterSpacing: '.08em' }}
-                  onClick={pj.togglePin}
-                >
-                  {pj.pinLabel}
-                </button>
-                <button
-                  type="button"
-                  className="hs-row-action"
-                  style={{ fontSize: 8, letterSpacing: '.08em' }}
-                  onClick={pj.edit}
-                >
-                  EDIT
-                </button>
-                <button
-                  type="button"
-                  className="hs-row-action"
-                  style={{ fontSize: 8, letterSpacing: '.08em' }}
-                  onClick={pj.del}
-                >
-                  DELETE
-                </button>
-                <button
-                  type="button"
-                  className="hs-row-action"
-                  style={{ fontSize: 8, letterSpacing: '.08em' }}
-                  onClick={pj.togglePause}
-                >
-                  {pj.pauseLabel}
-                </button>
-              </div>
-            </div>
-            <div style={{ fontSize: 14.5, fontWeight: 600, marginTop: 7 }}>
-              {pj.name}
-            </div>
-            <div
-              style={{
-                height: 4,
-                background: 'var(--track)',
-                borderRadius: 2,
-                margin: '12px 0 6px',
-              }}
-            >
-              <div
-                style={{
-                  width: pj.pct,
-                  height: '100%',
-                  background: 'var(--accent)',
-                  borderRadius: 2,
-                  transition: 'width .5s cubic-bezier(.22,1,.36,1)',
-                }}
+          <div key={pj.name} className="hs-project-card">
+            <div className="hs-project-head is-wrapped">
+              <div className="hs-project-tag">{pj.tag}</div>
+              <CardActions
+                actions={[
+                  [pj.pinLabel, pj.togglePin],
+                  ['EDIT', pj.edit],
+                  ['DELETE', pj.del],
+                  [pj.pauseLabel, pj.togglePause],
+                ]}
               />
             </div>
+
+            <div className="hs-project-name">{pj.name}</div>
+
+            <div className="hs-bar-track sm" style={{ margin: '12px 0 6px' }}>
+              <div className="hs-bar-fill is-eased" style={{ width: pj.pct }} />
+            </div>
             <div className="hs-meta-sm">{pj.meta}</div>
-            <div
-              style={{
-                borderTop: '1px solid var(--line-soft)',
-                marginTop: 12,
-                paddingTop: 10,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 10,
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  minWidth: 0,
-                }}
-              >
+
+            <div className="hs-project-next is-split">
+              <div className="hs-project-next-left">
                 <NextTask p={pj} truncate />
               </div>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  flex: 'none',
-                }}
-              >
+              <div className="hs-project-next-right">
                 <button
                   type="button"
-                  style={{
-                    font: '500 9px "IBM Plex Mono",monospace',
-                    letterSpacing: '.08em',
-                    color: 'var(--accent)',
-                    cursor: 'pointer',
-                    background: 'none',
-                    border: 'none',
-                  }}
+                  className="hs-project-cta"
                   onClick={pj.view}
                 >
                   ALL →
                 </button>
-                <button
-                  type="button"
-                  title="Show next tasks"
-                  className="hs-row-action"
-                  onClick={pj.toggleExpand}
-                >
-                  {pj.expanded ? '▴' : '▾'}
-                </button>
+                <ExpandButton p={pj} />
               </div>
             </div>
-            {pj.expanded && (
-              <div
-                style={{
-                  borderTop: '1px solid var(--line-soft)',
-                  marginTop: 10,
-                  paddingTop: 4,
-                }}
-              >
-                {pj.openTasks.map((ot) => (
-                  <div
-                    key={ot.text}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: '6px 0',
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={ot.toggle}
-                      style={{
-                        width: 13,
-                        height: 13,
-                        border: '1.5px solid var(--check-border)',
-                        borderRadius: 3,
-                        flex: 'none',
-                        cursor: 'pointer',
-                        background: 'none',
-                      }}
-                    />
-                    <div style={{ fontSize: 12.5, color: 'var(--text-2)' }}>
-                      {ot.text}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+
+            <OpenTasks p={pj} />
           </div>
         ))}
       </div>
 
       <div className="hs-add-row">
-        <div className="hs-add-plus" style={{ fontSize: 14 }}>
-          +
-        </div>
+        <div className="hs-add-plus">+</div>
         <input
           className="hs-add-input"
           value={projectDraft}
@@ -464,31 +223,13 @@ export default function Projects({ vm }: { vm: HomeState }) {
             PAUSED
           </div>
           {pausedProjects.map((pj) => (
-            <div
-              key={pj.name}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '12px 0',
-                borderBottom: '1px solid var(--line-soft)',
-              }}
-            >
-              <div style={{ fontSize: 14, color: 'var(--text-3)' }}>
-                {pj.name}
-              </div>
+            <div key={pj.name} className="hs-paused-row">
+              <div className="hs-paused-name">{pj.name}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <div className="hs-meta-sm">{pj.meta}</div>
                 <button
                   type="button"
-                  style={{
-                    font: '500 9px "IBM Plex Mono",monospace',
-                    letterSpacing: '.08em',
-                    color: 'var(--accent)',
-                    cursor: 'pointer',
-                    background: 'none',
-                    border: 'none',
-                  }}
+                  className="hs-project-cta"
                   onClick={pj.togglePause}
                 >
                   RESUME
@@ -512,6 +253,7 @@ export function ProjectDetail({ vm }: { vm: HomeState }) {
     setProjTaskDraft,
     setProjects,
   } = vm
+
   const project = projects.find((x) => x.name === openProject)
   if (!project) return null
 
@@ -519,17 +261,20 @@ export function ProjectDetail({ vm }: { vm: HomeState }) {
   const doneN = project.tasks.filter((t) => t.done).length
   const pct = (total ? Math.round((doneN / total) * 100) : 0) + '%'
 
+  // `typeof project.tasks` would not work here: a type query ignores the
+  // narrowing the early return above gives us.
+  const patchTasks = (fn: (tasks: ProjectTask[]) => ProjectTask[]) =>
+    setProjects((s) =>
+      s.map((x) =>
+        x.name === project.name ? { ...x, tasks: fn(x.tasks) } : x,
+      ),
+    )
+
   const onTaskKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== 'Enter') return
     const txt = projTaskDraft.trim()
     if (!txt) return
-    setProjects((s) =>
-      s.map((x) =>
-        x.name === project.name
-          ? { ...x, tasks: [...x.tasks, { text: txt, done: false }] }
-          : x,
-      ),
-    )
+    patchTasks((tasks) => [...tasks, { text: txt, done: false }])
     setProjTaskDraft('')
   }
 
@@ -538,15 +283,7 @@ export function ProjectDetail({ vm }: { vm: HomeState }) {
       <div style={{ maxWidth: 640 }}>
         <button
           type="button"
-          style={{
-            font: '500 10px "IBM Plex Mono",monospace',
-            letterSpacing: '.1em',
-            color: 'var(--muted)',
-            cursor: 'pointer',
-            marginBottom: 18,
-            background: 'none',
-            border: 'none',
-          }}
+          className="hs-back-link"
           onClick={() => {
             setScreen('projects')
             setOpenProject(null)
@@ -554,123 +291,45 @@ export function ProjectDetail({ vm }: { vm: HomeState }) {
         >
           ← PROJECTS
         </button>
-        <div
-          style={{
-            font: '500 9px "IBM Plex Mono",monospace',
-            letterSpacing: '.14em',
-            color: 'var(--accent)',
-          }}
-        >
-          {project.tag}
-        </div>
-        <div
-          className="hs-newsreader"
-          style={{
-            fontSize: 30,
-            fontWeight: 500,
-            marginTop: 8,
-            lineHeight: 1.15,
-          }}
-        >
-          {project.name}
-        </div>
-        <div
-          style={{
-            height: 4,
-            background: 'var(--track)',
-            borderRadius: 2,
-            margin: '18px 0 6px',
-          }}
-        >
-          <div
-            style={{
-              width: pct,
-              height: '100%',
-              background: 'var(--accent)',
-              borderRadius: 2,
-              transition: 'width .5s cubic-bezier(.22,1,.36,1)',
-            }}
-          />
+
+        <div className="hs-detail-tag">{project.tag}</div>
+        <div className="hs-newsreader hs-detail-name">{project.name}</div>
+
+        <div className="hs-bar-track sm" style={{ margin: '18px 0 6px' }}>
+          <div className="hs-bar-fill is-eased" style={{ width: pct }} />
         </div>
         <div className="hs-meta-sm">
           {doneN} OF {total} TASKS DONE · {pct}
         </div>
+
         <div className="hs-section-label" style={{ margin: '30px 0 2px' }}>
           TASKS
         </div>
         {project.tasks.map((t, i) => (
-          <div
-            key={t.text}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              padding: '13px 0',
-              borderBottom: '1px solid var(--line-soft)',
-            }}
-          >
+          <div key={t.text} className="hs-detail-task">
             <button
               type="button"
-              className="hs-checkbox"
-              style={{
-                width: 16,
-                height: 16,
-                borderColor: t.done ? 'var(--ink)' : 'var(--check-border)',
-                background: t.done ? 'var(--ink)' : 'transparent',
-              }}
+              className={`hs-checkbox md${t.done ? ' is-checked' : ''}`}
+              aria-pressed={t.done}
+              aria-label={t.text}
               onClick={() =>
-                setProjects((s) =>
-                  s.map((x) =>
-                    x.name === project.name
-                      ? {
-                          ...x,
-                          tasks: x.tasks.map((tt, ii) =>
-                            ii === i ? { ...tt, done: !tt.done } : tt,
-                          ),
-                        }
-                      : x,
+                patchTasks((tasks) =>
+                  tasks.map((tt, ii) =>
+                    ii === i ? { ...tt, done: !tt.done } : tt,
                   ),
                 )
               }
             >
               {t.done ? '✓' : ''}
             </button>
-            <div
-              style={{
-                fontSize: 14,
-                color: t.done ? 'var(--muted)' : 'var(--ink)',
-                textDecoration: t.done ? 'line-through' : 'none',
-              }}
-            >
+            <div className={`hs-detail-task-text${t.done ? ' is-done' : ''}`}>
               {t.text}
             </div>
           </div>
         ))}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            padding: '12px 0',
-            borderBottom: '1px solid var(--line-soft)',
-          }}
-        >
-          <div
-            style={{
-              width: 16,
-              height: 16,
-              border: '1.5px dashed var(--muted-2)',
-              borderRadius: 3,
-              flex: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--accent)',
-              fontSize: 11,
-            }}
-          >
-            +
-          </div>
+
+        <div className="hs-detail-task">
+          <div className="hs-add-dash-box md">+</div>
           <input
             className="hs-add-input"
             value={projTaskDraft}
