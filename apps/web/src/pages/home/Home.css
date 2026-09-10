@@ -318,6 +318,12 @@ body:has(.hs-splash) {
   border-bottom: 1px solid var(--line);
   padding-bottom: 8px;
 }
+/* Drops the label's own rule for the cases where its container already draws
+   one — inside .hs-section-row or .hs-group-head. */
+.hs-section-label.is-bare {
+  border: none;
+  padding: 0;
+}
 .hs-section-row {
   display: flex;
   align-items: baseline;

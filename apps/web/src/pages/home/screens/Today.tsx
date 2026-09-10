@@ -64,12 +64,7 @@ export default function Today({ vm }: { vm: HomeState }) {
         </div>
 
         <div className="hs-section-row">
-          <div
-            className="hs-section-label"
-            style={{ border: 'none', padding: 0 }}
-          >
-            UP NEXT
-          </div>
+          <div className="hs-section-label is-bare">UP NEXT</div>
           <button
             type="button"
             className="hs-view-all"
@@ -97,10 +92,7 @@ export default function Today({ vm }: { vm: HomeState }) {
         </div>
 
         <div className="hs-section-row">
-          <div
-            className="hs-section-label"
-            style={{ border: 'none', padding: 0 }}
-          >
+          <div className="hs-section-label is-bare">
             ALL OPEN · {todos.length}
           </div>
           <button
@@ -140,10 +132,7 @@ export default function Today({ vm }: { vm: HomeState }) {
             className="hs-title-row"
             style={{ borderBottom: '1px solid var(--line)', paddingBottom: 8 }}
           >
-            <div
-              className="hs-section-label"
-              style={{ border: 'none', padding: 0 }}
-            >
+            <div className="hs-section-label is-bare">
               ROUTINES · {routinesDone}/{routinesTotal}
             </div>
           </div>

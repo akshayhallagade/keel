@@ -105,12 +105,7 @@ export default function Routines({ vm }: { vm: HomeState }) {
           (ROUTINE_TYPES as readonly RoutinePeriod[]).map((type) => (
             <div key={type}>
               <div className="hs-group-head">
-                <div
-                  className="hs-section-label"
-                  style={{ border: 'none', padding: 0 }}
-                >
-                  {type}
-                </div>
+                <div className="hs-section-label is-bare">{type}</div>
                 <div className="hs-group-head-note">LAST 7 DAYS · STREAK</div>
               </div>
 
@@ -178,12 +173,7 @@ export default function Routines({ vm }: { vm: HomeState }) {
 
         <div>
           <div className="hs-group-head">
-            <div
-              className="hs-section-label"
-              style={{ border: 'none', padding: 0 }}
-            >
-              THIS WEEK
-            </div>
+            <div className="hs-section-label is-bare">THIS WEEK</div>
             <div style={{ display: 'flex', gap: 3 }}>
               {DOW.map((d, i) => (
                 <div key={i} className="hs-dow-head">
