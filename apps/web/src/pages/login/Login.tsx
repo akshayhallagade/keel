@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import gsap from 'gsap'
 import type { User } from '@keel/types'
+import { checkEmailSchema, loginSchema, signupSchema } from '@keel/validation'
 import LogoMark from '../../components/LogoMark'
 import RevealToggle from '../../components/RevealToggle'
 import { checkEmail, login as loginRequest, signup } from '../../api/auth'
@@ -39,6 +40,24 @@ const errorMessage = (e: unknown) =>
   e instanceof ApiError
     ? e.message
     : 'Could not reach the server. Check your connection and try again.'
+
+const SIGNUP_MESSAGES: Record<FieldName, string> = {
+  email: 'Enter a valid email address.',
+  password: 'Password must be at least 8 characters.',
+  name: 'Tell us your name.',
+  confirm: 'Passwords don’t match.',
+}
+
+/// Which input to point the shake and the toast at. Zod reports issues in the
+/// schema's key order, so the first one is the field the user should fix first.
+/// Typed structurally rather than as ZodError so the web app does not need a
+/// direct dependency on zod just to name one type.
+const firstInvalidField = (error: {
+  issues: ReadonlyArray<{ path: ReadonlyArray<PropertyKey> }>
+}): FieldName | null => {
+  const key = error.issues[0]?.path[0]
+  return key === 'email' || key === 'password' || key === 'name' ? key : null
+}
 
 function passwordStrength(pw: string) {
   let score = 0
@@ -436,24 +455,50 @@ export default function Login({ onAuthenticated }: LoginProps) {
     [],
   )
 
+  /// Validity is decided by the same schemas the API validates with, so the two
+  /// sides cannot drift. Only the wording is local — Zod's default messages are
+  /// written for developers, not for this screen.
   const validate = useCallback((): ValidationError | null => {
+    const trimmedEmail = email.trim()
+
     if (step === 'email') {
-      if (!email.trim() || !email.includes('@')) {
-        return { field: 'email', message: 'Enter a valid email address.' }
-      }
-      return null
+      return checkEmailSchema.safeParse({ email: trimmedEmail }).success
+        ? null
+        : { field: 'email', message: 'Enter a valid email address.' }
     }
-    if (password.length < 8) {
+
+    if (step === 'password') {
+      // loginSchema, not signupSchema: an existing account may predate the
+      // 8-character rule and must still be able to sign in.
+      const result = loginSchema.safeParse({
+        email: trimmedEmail,
+        password,
+      })
+      if (result.success) return null
+      const field = firstInvalidField(result.error) ?? 'password'
       return {
-        field: 'password',
-        message: 'Password must be at least 8 characters.',
+        field,
+        message:
+          field === 'email'
+            ? 'Enter a valid email address.'
+            : 'Enter your password.',
       }
     }
-    if (step === 'details') {
-      if (!name.trim()) return { field: 'name', message: 'Tell us your name.' }
-      if (confirm !== password) {
-        return { field: 'confirm', message: 'Passwords don’t match.' }
-      }
+
+    const result = signupSchema.safeParse({
+      email: trimmedEmail,
+      password,
+      name: name.trim(),
+    })
+    if (!result.success) {
+      const field = firstInvalidField(result.error) ?? 'email'
+      return { field, message: SIGNUP_MESSAGES[field] }
+    }
+
+    // The confirmation box never leaves the browser, so it is deliberately not
+    // part of signupSchema and is checked here.
+    if (confirm !== password) {
+      return { field: 'confirm', message: 'Passwords don’t match.' }
     }
     return null
   }, [step, email, password, name, confirm])

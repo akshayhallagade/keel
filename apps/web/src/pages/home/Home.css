@@ -465,6 +465,15 @@
   color: var(--text-2);
   cursor: pointer;
 }
+
+/* Selected chip. --accent carries the user's chosen colour down from
+   .home-shell, so this needs no help from JavaScript. */
+.hs-chip.is-selected,
+.hs-chip-flat.is-selected {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--paper);
+}
 .hs-toggle-track {
   border-radius: 9px;
   position: relative;
@@ -631,6 +640,124 @@
   flex-direction: column;
   gap: 8px;
 }
+.hs-field-input.is-mono {
+  font: 400 12px var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* A label row with something (a "remove" link, a chip group) opposite it. */
+.hs-row-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+/* Unstyled button that reads as a small mono text link. */
+.hs-link-mono {
+  font: 400 10px var(--mono);
+  color: var(--muted);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+.hs-link-mono.is-danger {
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+}
+
+.hs-add-dashed {
+  text-align: center;
+  font: 500 11px var(--mono);
+  letter-spacing: 0.05em;
+  padding: 12px 0;
+  border-radius: 8px;
+  border: 1px dashed var(--line);
+  color: var(--muted);
+  cursor: pointer;
+  background: none;
+}
+
+.hs-star-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.hs-star-toggle .hs-star {
+  color: var(--accent);
+  font-size: 16px;
+}
+
+/* ---------- Time wheel (routine panel) ---------- */
+.hs-wheel {
+  background: var(--input-bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 6px 0;
+}
+.hs-wheel-rows {
+  position: relative;
+  height: 112px;
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  overflow: hidden;
+}
+.hs-wheel-band {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  right: 10px;
+  transform: translateY(-50%);
+  height: 28px;
+  background: #f3eee3;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 5px;
+}
+.hs-wheel-col {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+}
+.hs-wheel-item {
+  height: 28px;
+  width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: var(--muted-2);
+  font-weight: 400;
+  font-size: 14px;
+  font-family: inherit;
+}
+.hs-wheel-item.is-active {
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 17px;
+}
 .hs-panel-actions {
   display: flex;
   gap: 10px;
@@ -731,12 +858,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--mono);
   font-size: 11px;
   border-radius: 4px;
   cursor: pointer;
   background: none;
   border: 1px solid transparent;
+  color: var(--ink-2);
+}
+/* Today is outlined; a picked day is filled. Picking today fills it — the fill
+   wins, so the outline is dropped rather than drawn under the accent block. */
+.hs-cal-cell.is-today {
+  color: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.hs-cal-cell.is-selected {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--paper);
+  font-weight: 600;
 }
 
 /* ---------- Alarm clocks ---------- */

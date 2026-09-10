@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { User } from '@keel/types'
+import { useClockDrag } from './useClockDrag'
 import {
   DOT_COLORS,
   SEED_ALARMS,
@@ -191,80 +192,37 @@ export function useHomeState(user: User, onSignOut: () => void) {
     }
   }, [startCount])
 
-  useEffect(() => {
-    if (!dragHand) return
-    const onMove = (ev: PointerEvent) => {
-      const svg = document.getElementById('alarm-edit-clock')
-      if (!svg) return
-      const rect = svg.getBoundingClientRect()
-      const scale = 260 / rect.width
-      const cx = 130,
-        cy = 130
-      const px = (ev.clientX - rect.left) * scale - cx
-      const py = (ev.clientY - rect.top) * scale - cy
-      let deg = (Math.atan2(px, -py) * 180) / Math.PI
-      if (deg < 0) deg += 360
-      if (dragHand === 'minute') {
-        setAlarmDraft((d) => (d ? { ...d, m: Math.round(deg / 6) % 60 } : d))
-      } else {
-        setAlarmDraft((d) => {
-          if (!d) return d
-          let hh = Math.round(deg / 30) % 12
-          if (hh === 0) hh = 12
-          return { ...d, h: hh }
-        })
-      }
-    }
-    const onUp = () => setDragHand(null)
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-    return () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-    }
-  }, [dragHand])
+  // The big editor clock writes into the draft alarm.
+  useClockDrag(
+    dragHand,
+    'alarm-edit-clock',
+    260,
+    (hand, value) =>
+      setAlarmDraft((d) =>
+        d ? { ...d, ...(hand === 'minute' ? { m: value } : { h: value }) } : d,
+      ),
+    () => setDragHand(null),
+  )
 
-  useEffect(() => {
-    if (!dragTileHand || dragTileIdx === null) return
-    const idx = dragTileIdx
-    const onMove = (ev: PointerEvent) => {
-      const svg = document.getElementById('alarm-tile-clock-' + idx)
-      if (!svg) return
-      const rect = svg.getBoundingClientRect()
-      const scale = 110 / rect.width
-      const cx = 55,
-        cy = 55
-      const px = (ev.clientX - rect.left) * scale - cx
-      const py = (ev.clientY - rect.top) * scale - cy
-      let deg = (Math.atan2(px, -py) * 180) / Math.PI
-      if (deg < 0) deg += 360
-      const hand = dragTileHand
+  // A tile clock writes straight back into that alarm's "h:mm" string.
+  useClockDrag(
+    dragTileHand,
+    dragTileIdx === null ? null : 'alarm-tile-clock-' + dragTileIdx,
+    110,
+    (hand, value) =>
       setAlarms((s) =>
-        s.map((a, ai) => {
-          if (ai !== idx) return a
-          const [h0, m0] = a.time.split(':').map(Number)
-          let h = h0,
-            m = m0
-          if (hand === 'minute') m = Math.round(deg / 6) % 60
-          else {
-            const hh = Math.round(deg / 30) % 12
-            h = hh === 0 ? 12 : hh
-          }
-          return { ...a, time: h + ':' + String(m).padStart(2, '0') }
+        s.map((a, i) => {
+          if (i !== dragTileIdx) return a
+          const [h, m] = a.time.split(':').map(Number)
+          const next = hand === 'minute' ? [h, value] : [value, m]
+          return { ...a, time: next[0] + ':' + pad2(next[1]) }
         }),
-      )
-    }
-    const onUp = () => {
+      ),
+    () => {
       setDragTileHand(null)
       setDragTileIdx(null)
-    }
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-    return () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-    }
-  }, [dragTileHand, dragTileIdx])
+    },
+  )
 
   const go = useCallback(
     (key: Screen) => {
@@ -378,38 +336,23 @@ export function useHomeState(user: User, onSignOut: () => void) {
   const dMo = dm.getMonth()
   const firstDow = new Date(dY, dMo, 1).getDay()
   const daysIn = new Date(dY, dMo + 1, 0).getDate()
+  // Leading blanks pad the grid so day 1 lands under the right weekday.
   const calCells: {
     day: string
+    selected: boolean
+    isToday: boolean
     pick: () => void
-    bg: string
-    color: string
-    weight: number
-    ring: string
   }[] = []
   for (let k = 0; k < firstDow; k++) {
-    calCells.push({
-      day: '',
-      pick: () => {},
-      bg: 'transparent',
-      color: 'transparent',
-      weight: 400,
-      ring: '1px solid transparent',
-    })
+    calCells.push({ day: '', selected: false, isToday: false, pick: () => {} })
   }
   for (let d = 1; d <= daysIn; d++) {
     const iso = isoOf(dY, dMo, d)
-    const sel = todoPanel && todoPanel.due === iso
-    const isTodayCell = iso === todayISO
     calCells.push({
       day: String(d),
+      selected: !!todoPanel && todoPanel.due === iso,
+      isToday: iso === todayISO,
       pick: () => setPanel({ due: iso }),
-      bg: sel ? 'var(--accent)' : 'transparent',
-      color: sel ? 'var(--paper)' : isTodayCell ? 'var(--accent)' : '#3D382F',
-      weight: sel || isTodayCell ? 600 : 400,
-      ring:
-        isTodayCell && !sel
-          ? '1px solid var(--accent)'
-          : '1px solid transparent',
     })
   }
   const cal = {
@@ -420,16 +363,11 @@ export function useHomeState(user: User, onSignOut: () => void) {
   }
 
   const areas = ['FINANCE', 'HOME', 'HEALTH', 'PROJECTS', 'INBOX']
-  const areaChips = areas.map((name) => {
-    const sel = todoPanel && todoPanel.tag === name
-    return {
-      name,
-      border: sel ? accent : 'var(--line)',
-      color: sel ? 'var(--paper)' : 'var(--text-2)',
-      bg: sel ? accent : 'var(--input-bg)',
-      pick: () => setPanel({ tag: name }),
-    }
-  })
+  const areaChips = areas.map((name) => ({
+    name,
+    selected: !!todoPanel && todoPanel.tag === name,
+    pick: () => setPanel({ tag: name }),
+  }))
 
   const savePanel = () => {
     if (!todoPanel || !todoPanel.text.trim()) return

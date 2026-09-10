@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react'
 import Sidebar from './Sidebar'
 import Splash from './Splash'
 import Today from './screens/Today'
@@ -18,8 +19,44 @@ import {
   ConfirmDeleteModal,
 } from './panels/Panels'
 import type { User } from '@keel/types'
-import { useHomeState } from './useHomeState'
+import type { Screen } from './types'
+import { useHomeState, type HomeState } from './useHomeState'
 import './Home.css'
+
+/**
+ * Every screen, keyed by the `Screen` union. Because the key type is `Screen`,
+ * adding a case to that union without adding it here is a compile error — which
+ * the seventeen-line chain of `{vm.screen === '…' && <X/>}` this replaces could
+ * never catch.
+ */
+const SCREENS: Record<Screen, ComponentType<{ vm: HomeState }>> = {
+  today: Today,
+  todos: Todos,
+  routines: Routines,
+  projects: Projects,
+  projectDetail: ProjectDetail,
+  invest: Investments,
+  accounts: Accounts,
+  spend: Spend,
+  budget: Budget,
+  goals: Goals,
+  books: Books,
+  quotes: Quotes,
+  wishlist: Wishlist,
+  hobbies: Hobbies,
+  alarms: Alarms,
+  reminders: Reminders,
+  settings: Settings,
+}
+
+const PANELS = [
+  TodoPanel,
+  RoutinePanel,
+  CreatePanel,
+  HobbyPanel,
+  ProjectPanel,
+  ConfirmDeleteModal,
+]
 
 export default function Home({
   user,
@@ -29,6 +66,7 @@ export default function Home({
   onSignOut: () => void
 }) {
   const vm = useHomeState(user, onSignOut)
+  const Screen = SCREENS[vm.screen]
 
   return (
     <div
@@ -39,30 +77,11 @@ export default function Home({
 
       <Sidebar vm={vm} />
 
-      {vm.screen === 'today' && <Today vm={vm} />}
-      {vm.screen === 'todos' && <Todos vm={vm} />}
-      {vm.screen === 'routines' && <Routines vm={vm} />}
-      {vm.screen === 'projects' && <Projects vm={vm} />}
-      {vm.screen === 'projectDetail' && <ProjectDetail vm={vm} />}
-      {vm.screen === 'invest' && <Investments vm={vm} />}
-      {vm.screen === 'accounts' && <Accounts vm={vm} />}
-      {vm.screen === 'spend' && <Spend vm={vm} />}
-      {vm.screen === 'budget' && <Budget />}
-      {vm.screen === 'goals' && <Goals vm={vm} />}
-      {vm.screen === 'books' && <Books vm={vm} />}
-      {vm.screen === 'quotes' && <Quotes vm={vm} />}
-      {vm.screen === 'wishlist' && <Wishlist vm={vm} />}
-      {vm.screen === 'hobbies' && <Hobbies vm={vm} />}
-      {vm.screen === 'alarms' && <Alarms vm={vm} />}
-      {vm.screen === 'reminders' && <Reminders vm={vm} />}
-      {vm.screen === 'settings' && <Settings vm={vm} />}
+      <Screen vm={vm} />
 
-      <TodoPanel vm={vm} />
-      <RoutinePanel vm={vm} />
-      <CreatePanel vm={vm} />
-      <HobbyPanel vm={vm} />
-      <ProjectPanel vm={vm} />
-      <ConfirmDeleteModal vm={vm} />
+      {PANELS.map((P, i) => (
+        <P key={i} vm={vm} />
+      ))}
     </div>
   )
 }
