@@ -1,17 +1,8 @@
+/* Palette and font come from :root in index.css. */
 .onboarding-page {
-  --ink: #221f1b;
-  --paper: #faf8f3;
-  --canvas: #edeae3;
-  --accent: #c64f3b;
-  --line: #e5e0d6;
-  --text-2: #5c564c;
-  --muted: #a39b8b;
-  --check-border: #b8af9f;
-
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  font-family: 'IBM Plex Sans', sans-serif;
   background: var(--canvas);
   color: var(--ink);
   position: relative;

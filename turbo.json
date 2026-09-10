@@ -7,8 +7,6 @@
     },
     "@keel/types#build": { "dependsOn": ["^build"], "outputs": [] },
     "@keel/validation#build": { "dependsOn": ["^build"], "outputs": [] },
-    "@keel/utils#build": { "dependsOn": ["^build"], "outputs": [] },
-    "@keel/design-system#build": { "dependsOn": ["^build"], "outputs": [] },
     "@keel/db#build": { "dependsOn": ["^build"], "outputs": [] },
     "@keel/api#build": { "dependsOn": ["^build"], "outputs": [] },
     "dev": {

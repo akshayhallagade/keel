@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { User } from '@keel/types'
 import {
-  ACCENTS,
   DOT_COLORS,
-  ROUTINE_TYPES,
   SEED_ALARMS,
   SEED_DONE,
   SEED_HOBBIES,
@@ -33,42 +31,24 @@ import type {
   TodoPanelState,
 } from './types'
 
-const MON3 = [
-  'JAN',
-  'FEB',
-  'MAR',
-  'APR',
-  'MAY',
-  'JUN',
-  'JUL',
-  'AUG',
-  'SEP',
-  'OCT',
-  'NOV',
-  'DEC',
-]
-const MONF = [
-  'JANUARY',
-  'FEBRUARY',
-  'MARCH',
-  'APRIL',
-  'MAY',
-  'JUNE',
-  'JULY',
-  'AUGUST',
-  'SEPTEMBER',
-  'OCTOBER',
-  'NOVEMBER',
-  'DECEMBER',
-]
+/// Locale pinned to 'en': these are display strings in a fixed English design,
+/// not something that should follow the visitor's browser language.
+const shortMonth = new Intl.DateTimeFormat('en', { month: 'short' })
+const longMonth = new Intl.DateTimeFormat('en', { month: 'long' })
+
+export const monthShort = (d: Date) => shortMonth.format(d).toUpperCase()
+export const monthLong = (d: Date) => longMonth.format(d).toUpperCase()
+
 const R_MINS = [0, 15, 30, 45]
 
 export const isISO = (s: string | undefined) =>
   /^\d{4}-\d{2}-\d{2}$/.test(s || '')
 export const fmtDue = (s: string) => {
   if (!isISO(s)) return s || ''
+  // Parsed field by field on purpose: `new Date('2026-01-01')` is read as UTC
+  // midnight and renders as the previous day for anyone behind UTC.
   const d = new Date(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10))
-  return d.getDate() + ' ' + MON3[d.getMonth()]
+  return d.getDate() + ' ' + monthShort(d)
 }
 export const parseInr = (v: string) => {
   const n = parseInt(String(v).replace(/[^0-9]/g, ''), 10)
@@ -433,7 +413,7 @@ export function useHomeState(user: User, onSignOut: () => void) {
     })
   }
   const cal = {
-    label: MONF[dMo] + ' ' + dY,
+    label: monthLong(dm) + ' ' + dY,
     prev: () => setPanel({ calShift: calShift - 1 }),
     next: () => setPanel({ calShift: calShift + 1 }),
     cells: calCells,
@@ -1022,5 +1002,4 @@ const CREATE_CHIP_OPTS: Partial<Record<CreatePanelType, (string | null)[]>> =
     ]),
   )
 
-export { ACCENTS, ROUTINE_TYPES, MONF, MON3 }
 export type HomeState = ReturnType<typeof useHomeState>

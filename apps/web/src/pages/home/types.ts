@@ -9,10 +9,6 @@ export interface Todo {
   completing?: boolean
 }
 
-export interface DoneTodo {
-  text: string
-}
-
 export type RoutinePeriod =
   'WAKE UP' | 'MORNING' | 'AFTERNOON' | 'EVENING' | 'BEDTIME'
 
@@ -88,40 +84,6 @@ export type Screen =
   | 'alarms'
   | 'reminders'
   | 'settings'
-
-export interface NewGoal {
-  name: string
-  target: string
-}
-
-export interface NewBook {
-  name: string
-  author: string
-}
-
-export interface NewQuote {
-  text: string
-  author: string
-}
-
-export interface NewWish {
-  name: string
-  price: string
-  cat: string | null
-}
-
-export interface NewSpend {
-  name: string
-  price: string
-  cat: string | null
-  dot: string
-}
-
-export interface NewReminder {
-  name: string
-  when: string
-  bucket: string | null
-}
 
 export interface TodoPanelState {
   index: number

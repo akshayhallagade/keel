@@ -153,11 +153,7 @@ importers:
         specifier: ^4.0.0
         version: 4.23.1
 
-  packages/design-system: {}
-
   packages/types: {}
-
-  packages/utils: {}
 
   packages/validation:
     dependencies:

@@ -1,22 +1,7 @@
+/* Palette and font come from :root in index.css. */
 .login-page {
-  --ink: #221f1b;
-  --paper: #faf8f3;
-  --canvas: #edeae3;
-  --accent: #c64f3b;
-  --accent-hover: #a83f2f;
-  --line: #e5e0d6;
-  --input-bg: #fdfcf8;
-  --text-2: #5c564c;
-  --text-3: #8a8172;
-  --muted: #a39b8b;
-  --muted-2: #c8c0b0;
-  --check-border: #b8af9f;
-  --positive: #5b7b4f;
-  --track: #eae5d9;
-
   min-height: 100vh;
   display: flex;
-  font-family: 'IBM Plex Sans', sans-serif;
   background: var(--canvas);
   color: var(--ink);
   position: relative;
