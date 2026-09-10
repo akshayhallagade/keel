@@ -1,4 +1,5 @@
 import type { HomeState } from '../useHomeState'
+import { SEED_REMINDERS } from '../seedData'
 
 const CLOCK_TICKS = [
   { x1: 80, y1: 11.7, x2: 77.5, y2: 16 },
@@ -587,48 +588,6 @@ export function Alarms({ vm }: { vm: HomeState }) {
   )
 }
 
-const REMINDERS_TODAY = [
-  {
-    when: '4:15 PM',
-    name: 'Leave for the gym',
-    meta: '15 MIN BEFORE · PULL DAY',
-  },
-  {
-    when: '9:30 PM',
-    name: 'Plan tomorrow’s Top 3',
-    meta: 'LINKED TO EVENING ROUTINE',
-  },
-]
-const REMINDERS_UPCOMING = [
-  {
-    when: 'SUN 8AM',
-    name: 'Credit card autopay executes',
-    meta: '₹23,410 · CHECK BALANCE FIRST',
-  },
-  {
-    when: 'TUE 4PM',
-    name: 'Plumber arrives — kitchen tap',
-    meta: 'LINKED TO TODO',
-  },
-]
-const REMINDERS_RECURRING = [
-  {
-    when: '4TH',
-    name: 'SIP executes tomorrow',
-    meta: 'MONTHLY · DAY BEFORE THE 5TH',
-  },
-  {
-    when: 'MON 9AM',
-    name: 'Weekly review — clear inbox',
-    meta: 'EVERY MONDAY',
-  },
-  {
-    when: '28TH',
-    name: 'Renew gym membership',
-    meta: 'MONTHLY · CURRENTLY OVERDUE',
-  },
-]
-
 function ReminderRow({
   when,
   name,
@@ -688,7 +647,7 @@ export function Reminders({ vm }: { vm: HomeState }) {
         </div>
 
         <div className="hs-section-label">TODAY</div>
-        {REMINDERS_TODAY.map((r) => (
+        {SEED_REMINDERS.today.map((r) => (
           <ReminderRow key={r.name} {...r} accentWhen />
         ))}
         {today.map((r, i) => (
@@ -705,7 +664,7 @@ export function Reminders({ vm }: { vm: HomeState }) {
         <div className="hs-section-label" style={{ marginTop: 26 }}>
           UPCOMING
         </div>
-        {REMINDERS_UPCOMING.map((r) => (
+        {SEED_REMINDERS.upcoming.map((r) => (
           <ReminderRow key={r.name} {...r} />
         ))}
         {upcoming.map((r, i) => (
@@ -717,7 +676,7 @@ export function Reminders({ vm }: { vm: HomeState }) {
         <div className="hs-section-label" style={{ marginTop: 26 }}>
           RECURRING
         </div>
-        {REMINDERS_RECURRING.map((r) => (
+        {SEED_REMINDERS.recurring.map((r) => (
           <ReminderRow key={r.name} {...r} />
         ))}
         {recurring.map((r, i) => (

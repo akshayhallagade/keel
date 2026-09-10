@@ -1,4 +1,5 @@
 import type { HomeState } from '../useHomeState'
+import { SEED_SPEND, SEED_ENVELOPES } from '../seedData'
 
 export function Investments({ vm }: { vm: HomeState }) {
   const { countProg } = vm
@@ -462,51 +463,6 @@ function MiniRow({
   )
 }
 
-const SPEND_STATIC = [
-  {
-    name: 'Blinkit — groceries',
-    dot: 'var(--positive)',
-    cat: 'GROCERIES',
-    price: '₹1,240',
-    when: 'TODAY',
-  },
-  {
-    name: 'Uber — office to home',
-    dot: '#5A6E8C',
-    cat: 'TRANSPORT',
-    price: '₹310',
-    when: 'TODAY',
-  },
-  {
-    name: 'Dinner — Mahesh Lunch Home',
-    dot: '#C0913C',
-    cat: 'EATING OUT',
-    price: '₹1,860',
-    when: 'FRI',
-  },
-  {
-    name: 'Netflix',
-    dot: 'var(--check-border)',
-    cat: 'SUBSCRIPTIONS · MONTHLY',
-    price: '₹649',
-    when: 'FRI',
-  },
-  {
-    name: 'Film rolls — 2× Kodak Gold',
-    dot: 'var(--accent)',
-    cat: 'HOBBIES',
-    price: '₹1,100',
-    when: 'THU',
-  },
-  {
-    name: 'Rent',
-    dot: 'var(--ink)',
-    cat: 'FIXED · AUTOPAY',
-    price: '₹28,000',
-    when: 'JUL 1',
-  },
-]
-
 export function Spend({ vm }: { vm: HomeState }) {
   const { newSpend, openC } = vm
   const byCategory = [
@@ -561,7 +517,7 @@ export function Spend({ vm }: { vm: HomeState }) {
             </div>
           </div>
         ))}
-        {SPEND_STATIC.map((sp) => (
+        {SEED_SPEND.map((sp) => (
           <div
             key={sp.name}
             style={{
@@ -674,63 +630,6 @@ export function Spend({ vm }: { vm: HomeState }) {
   )
 }
 
-const ENVELOPES = [
-  {
-    name: 'Fixed — rent, utilities, wifi',
-    spent: '₹31,400',
-    budget: '₹32,000',
-    pct: 98,
-    color: 'var(--ink)',
-    note: '98% · ALL PAID FOR JULY',
-    noteColor: 'var(--muted)',
-  },
-  {
-    name: 'Groceries',
-    spent: '₹4,320',
-    budget: '₹12,000',
-    pct: 36,
-    color: 'var(--positive)',
-    note: '36% · ON PACE',
-    noteColor: 'var(--positive)',
-  },
-  {
-    name: 'Eating out',
-    spent: '₹3,180',
-    budget: '₹6,000',
-    pct: 53,
-    color: 'var(--accent)',
-    note: '53% BY DAY 5 · RUNNING HOT',
-    noteColor: 'var(--accent)',
-  },
-  {
-    name: 'Transport',
-    spent: '₹1,530',
-    budget: '₹5,000',
-    pct: 31,
-    color: '#5A6E8C',
-    note: '31% · ON PACE',
-    noteColor: 'var(--positive)',
-  },
-  {
-    name: 'Hobbies & books',
-    spent: '₹1,100',
-    budget: '₹4,000',
-    pct: 28,
-    color: '#C0913C',
-    note: '28% · ON PACE',
-    noteColor: 'var(--positive)',
-  },
-  {
-    name: 'Everything else',
-    spent: '₹650',
-    budget: '₹16,000',
-    pct: 4,
-    color: 'var(--check-border)',
-    note: '4% · BUFFER INTACT',
-    noteColor: 'var(--muted)',
-  },
-]
-
 export function Budget() {
   return (
     <div className="hs-screen">
@@ -743,7 +642,7 @@ export function Budget() {
           ₹42,180 SPENT · ₹32,820 REMAINING · 26 DAYS LEFT
         </div>
         <div className="hs-section-label">ENVELOPES</div>
-        {ENVELOPES.map((e) => (
+        {SEED_ENVELOPES.map((e) => (
           <div
             key={e.name}
             style={{

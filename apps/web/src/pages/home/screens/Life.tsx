@@ -1,39 +1,14 @@
 import type { HomeState } from '../useHomeState'
-
-const GOAL_CARDS = [
-  {
-    name: 'Read 24 books',
-    status: 'AHEAD',
-    color: 'var(--positive)',
-    pct: 58,
-    meta: '14 OF 24 · PACE NEEDS 12.4',
-    next: 'Next: finish "Deep Work" — 38% left',
-  },
-  {
-    name: 'Run a half-marathon',
-    status: 'ON TRACK',
-    color: '#C0913C',
-    pct: 45,
-    meta: 'WEEK 9 OF 20 · RACE NOV 15',
-    next: 'Next: 12 km long run — Sunday',
-  },
-  {
-    name: '₹3L emergency fund',
-    status: 'ON TRACK',
-    color: '#C0913C',
-    pct: 70,
-    meta: '₹2,10,000 OF ₹3,00,000',
-    next: 'Next: ₹15,000 auto-transfer on the 1st',
-  },
-  {
-    name: 'Ship the side project',
-    status: 'BEHIND',
-    color: 'var(--accent)',
-    pct: 25,
-    meta: '2 OF 8 MILESTONES · TARGET OCT',
-    next: 'Next: sketch onboarding flow — in Top 3 today',
-  },
-]
+import {
+  SEED_GOALS,
+  SEED_READING_NOW,
+  SEED_TO_READ,
+  SEED_FINISHED_BOOKS,
+  SEED_QUOTES,
+  SEED_READY_TO_BUY,
+  SEED_COOLING,
+  SEED_DROPPED,
+} from '../seedData'
 
 export function Goals({ vm }: { vm: HomeState }) {
   const { newGoals, openC } = vm
@@ -47,7 +22,7 @@ export function Goals({ vm }: { vm: HomeState }) {
         4 GOALS · 1 AHEAD · 2 ON TRACK · 1 BEHIND
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-        {GOAL_CARDS.map((g) => (
+        {SEED_GOALS.map((g) => (
           <div key={g.name} className="hs-card">
             <div
               style={{
@@ -178,25 +153,6 @@ export function Goals({ vm }: { vm: HomeState }) {
   )
 }
 
-const READING_NOW = [
-  { name: 'Deep Work', pct: 62, meta: 'CAL NEWPORT · STARTED JUN 21' },
-  {
-    name: 'The Almanack of Naval Ravikant',
-    pct: 18,
-    meta: 'ERIC JORGENSON · STARTED JUL 02',
-  },
-]
-const TO_READ = [
-  { name: 'Thinking in Systems', author: 'DONELLA MEADOWS' },
-  { name: 'Four Thousand Weeks', author: 'OLIVER BURKEMAN' },
-  { name: 'The Psychology of Money', author: 'MORGAN HOUSEL · ON WISHLIST' },
-]
-const RECENTLY_FINISHED = [
-  { name: 'Atomic Habits', month: 'JUN' },
-  { name: 'Show Your Work!', month: 'JUN' },
-  { name: 'The Pathless Path', month: 'MAY' },
-]
-
 export function Books({ vm }: { vm: HomeState }) {
   const { newReading, newBooks, openC } = vm
   return (
@@ -210,7 +166,7 @@ export function Books({ vm }: { vm: HomeState }) {
           READING LOG · 2026
         </div>
         <div className="hs-section-label">READING NOW</div>
-        {READING_NOW.map((b) => (
+        {SEED_READING_NOW.map((b) => (
           <div
             key={b.name}
             style={{
@@ -311,7 +267,7 @@ export function Books({ vm }: { vm: HomeState }) {
         <div className="hs-section-label" style={{ marginTop: 28 }}>
           TO READ
         </div>
-        {TO_READ.map((b) => (
+        {SEED_TO_READ.map((b) => (
           <div
             key={b.name}
             style={{
@@ -430,7 +386,7 @@ export function Books({ vm }: { vm: HomeState }) {
         </div>
         <div>
           <div className="hs-section-label">RECENTLY FINISHED</div>
-          {RECENTLY_FINISHED.map((b) => (
+          {SEED_FINISHED_BOOKS.map((b) => (
             <div
               key={b.name}
               style={{
@@ -452,29 +408,6 @@ export function Books({ vm }: { vm: HomeState }) {
     </div>
   )
 }
-
-const STATIC_QUOTES = [
-  {
-    text: 'You do not rise to the level of your goals. You fall to the level of your systems.',
-    author: 'JAMES CLEAR',
-    saved: 'JUN 2026',
-  },
-  {
-    text: 'The impediment to action advances action. What stands in the way becomes the way.',
-    author: 'MARCUS AURELIUS',
-    saved: 'FEB 2026',
-  },
-  {
-    text: 'How we spend our days is, of course, how we spend our lives.',
-    author: 'ANNIE DILLARD',
-    saved: 'JAN 2026',
-  },
-  {
-    text: 'Simplicity is a great virtue but it requires hard work to achieve it.',
-    author: 'EDSGER DIJKSTRA',
-    saved: 'APR 2026',
-  },
-]
 
 export function Quotes({ vm }: { vm: HomeState }) {
   const { newQuotes, openC } = vm
@@ -540,7 +473,7 @@ export function Quotes({ vm }: { vm: HomeState }) {
             </div>
           </div>
         ))}
-        {STATIC_QUOTES.map((q) => (
+        {SEED_QUOTES.map((q) => (
           <div
             key={q.author}
             style={{
@@ -585,50 +518,6 @@ export function Quotes({ vm }: { vm: HomeState }) {
   )
 }
 
-const READY_TO_BUY = [
-  {
-    name: '"Deep Work" — hardcover',
-    meta: 'BOOKS · ADDED 41 DAYS AGO',
-    price: '₹499',
-  },
-  {
-    name: 'Running shoes — Pegasus',
-    meta: 'HEALTH · ADDED 35 DAYS AGO · NEEDED FOR RACE',
-    price: '₹9,800',
-  },
-]
-const COOLING = [
-  {
-    name: '35mm film camera — used',
-    meta: 'HOBBY · 12 OF 30 DAYS',
-    pct: 40,
-    price: '₹18,500',
-  },
-  {
-    name: 'Ergonomic chair',
-    meta: 'HOME · 22 OF 30 DAYS · IN HOME OFFICE PROJECT',
-    pct: 73,
-    price: '₹32,000',
-  },
-  {
-    name: 'Mechanical keyboard',
-    meta: 'WANT · 4 OF 30 DAYS',
-    pct: 13,
-    price: '₹12,500',
-  },
-  {
-    name: 'Noise-cancelling headphones',
-    meta: 'WANT · 9 OF 30 DAYS',
-    pct: 30,
-    price: '₹22,900',
-  },
-]
-const DROPPED = [
-  { name: 'Smart watch', price: '₹24,000' },
-  { name: 'Third pair of sneakers', price: '₹7,200' },
-  { name: 'Tablet stand', price: '₹2,400' },
-]
-
 export function Wishlist({ vm }: { vm: HomeState }) {
   const { newWish, openC } = vm
   return (
@@ -642,7 +531,7 @@ export function Wishlist({ vm }: { vm: HomeState }) {
           WAIT 30 DAYS BEFORE BUYING
         </div>
         <div className="hs-section-label">READY TO BUY · COOLED OFF</div>
-        {READY_TO_BUY.map((w) => (
+        {SEED_READY_TO_BUY.map((w) => (
           <div
             key={w.name}
             style={{
@@ -683,7 +572,7 @@ export function Wishlist({ vm }: { vm: HomeState }) {
         <div className="hs-section-label" style={{ marginTop: 28 }}>
           STILL COOLING
         </div>
-        {COOLING.map((w) => (
+        {SEED_COOLING.map((w) => (
           <div
             key={w.name}
             style={{
@@ -809,7 +698,7 @@ export function Wishlist({ vm }: { vm: HomeState }) {
         </div>
         <div>
           <div className="hs-section-label">RECENTLY DROPPED</div>
-          {DROPPED.map((d) => (
+          {SEED_DROPPED.map((d) => (
             <div
               key={d.name}
               style={{
