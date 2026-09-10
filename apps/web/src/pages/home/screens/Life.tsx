@@ -10,8 +10,51 @@ import {
   SEED_DROPPED,
 } from '../seedData'
 
+/**
+ * The "+ add another one" line that closes each list.
+ *
+ * Every screen on this page ended with its own copy of the same button.
+ */
+function AddRow({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button type="button" className="hs-add-row is-button" onClick={onClick}>
+      <div className="hs-add-plus">+</div>
+      <div className="hs-add-prompt">{label}</div>
+      <div className="hs-add-details">+ ADD</div>
+    </button>
+  )
+}
+
+function Bar({ pct, color }: { pct: number; color?: string }) {
+  return (
+    <div className="hs-bar-track sm">
+      <div
+        className="hs-bar-fill is-grown"
+        style={{ width: pct + '%', background: color }}
+      />
+    </div>
+  )
+}
+
+/* ---------------------------------------------------------------- Goals */
+
 export function Goals({ vm }: { vm: HomeState }) {
   const { newGoals, openC } = vm
+
+  // Seeded goals and ones the user just set render identically, so they are
+  // one list. Previously this was two near-identical blocks of JSX.
+  const goals = [
+    ...SEED_GOALS,
+    ...newGoals.map((g) => ({
+      name: g.name,
+      status: 'NEW',
+      color: 'var(--info)',
+      pct: 3,
+      meta: 'JUST SET · JUL 14',
+      next: 'Next: ' + g.target,
+    })),
+  ]
+
   return (
     <div className="hs-screen">
       <div className="hs-title-row" style={{ marginBottom: 2 }}>
@@ -21,140 +64,50 @@ export function Goals({ vm }: { vm: HomeState }) {
       <div className="hs-meta" style={{ marginBottom: 26 }}>
         4 GOALS · 1 AHEAD · 2 ON TRACK · 1 BEHIND
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-        {SEED_GOALS.map((g) => (
+
+      <div className="hs-card-grid">
+        {goals.map((g) => (
           <div key={g.name} className="hs-card">
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
-              }}
-            >
-              <div style={{ fontSize: 15.5, fontWeight: 600 }}>{g.name}</div>
-              <div
-                style={{
-                  font: '500 9px "IBM Plex Mono",monospace',
-                  letterSpacing: '.1em',
-                  color: g.color,
-                }}
-              >
+            <div className="hs-row-between">
+              <div className="hs-card-title">{g.name}</div>
+              <div className="hs-card-status" style={{ color: g.color }}>
                 {g.status}
               </div>
             </div>
-            <div
-              style={{
-                height: 4,
-                background: 'var(--track)',
-                borderRadius: 2,
-                margin: '14px 0 6px',
-              }}
-            >
-              <div
-                style={{
-                  width: g.pct + '%',
-                  height: '100%',
-                  background: 'var(--accent)',
-                  borderRadius: 2,
-                  transformOrigin: 'left',
-                  animation:
-                    'barGrow .8s cubic-bezier(.22,1,.36,1) .2s backwards',
-                }}
-              />
+            <div style={{ margin: '14px 0 6px' }}>
+              <Bar pct={g.pct} />
             </div>
             <div className="hs-meta-sm">{g.meta}</div>
-            <div
-              style={{
-                borderTop: '1px solid var(--line-soft)',
-                marginTop: 14,
-                paddingTop: 12,
-                fontSize: 13,
-                color: 'var(--text-2)',
-              }}
-            >
-              {g.next}
-            </div>
-          </div>
-        ))}
-        {newGoals.map((g) => (
-          <div key={g.name} className="hs-card">
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
-              }}
-            >
-              <div style={{ fontSize: 15.5, fontWeight: 600 }}>{g.name}</div>
-              <div
-                style={{
-                  font: '500 9px "IBM Plex Mono",monospace',
-                  letterSpacing: '.1em',
-                  color: '#5A6E8C',
-                }}
-              >
-                NEW
-              </div>
-            </div>
-            <div
-              style={{
-                height: 4,
-                background: 'var(--track)',
-                borderRadius: 2,
-                margin: '14px 0 6px',
-              }}
-            >
-              <div
-                style={{
-                  width: '3%',
-                  height: '100%',
-                  background: 'var(--accent)',
-                  borderRadius: 2,
-                }}
-              />
-            </div>
-            <div className="hs-meta-sm">JUST SET · JUL 14</div>
-            <div
-              style={{
-                borderTop: '1px solid var(--line-soft)',
-                marginTop: 14,
-                paddingTop: 12,
-                fontSize: 13,
-                color: 'var(--text-2)',
-              }}
-            >
-              Next: {g.target}
-            </div>
+            <div className="hs-card-foot">{g.next}</div>
           </div>
         ))}
       </div>
-      <button
-        type="button"
-        className="hs-add-row"
-        onClick={openC('goal')}
-        style={{ cursor: 'pointer', width: '100%' }}
-      >
-        <div className="hs-add-plus" style={{ fontSize: 14 }}>
-          +
-        </div>
-        <div
-          style={{
-            flex: 1,
-            font: '400 13px "IBM Plex Sans",sans-serif',
-            color: 'var(--muted)',
-            textAlign: 'left',
-          }}
-        >
-          Set a goal for 2026
-        </div>
-        <div className="hs-add-details">+ ADD</div>
-      </button>
+
+      <AddRow label="Set a goal for 2026" onClick={openC('goal')} />
     </div>
   )
 }
 
+/* ---------------------------------------------------------------- Books */
+
 export function Books({ vm }: { vm: HomeState }) {
   const { newReading, newBooks, openC } = vm
+
+  const reading = [
+    ...SEED_READING_NOW,
+    ...newReading.map((b) => ({
+      name: b.name,
+      pct: 0,
+      meta: b.author + ' · STARTED JUL 14',
+    })),
+  ]
+
+  // Seeded titles have no "start" action yet; the user's own do.
+  const toRead: { name: string; author: string; start?: () => void }[] = [
+    ...SEED_TO_READ,
+    ...newBooks,
+  ]
+
   return (
     <div className="hs-screen with-rail">
       <div className="hs-main-col wide">
@@ -165,119 +118,29 @@ export function Books({ vm }: { vm: HomeState }) {
         <div className="hs-meta" style={{ marginBottom: 24 }}>
           READING LOG · 2026
         </div>
+
         <div className="hs-section-label">READING NOW</div>
-        {SEED_READING_NOW.map((b) => (
-          <div
-            key={b.name}
-            style={{
-              padding: '16px 0',
-              borderBottom: '1px solid var(--line-soft)',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
-              }}
-            >
-              <div
-                className="hs-newsreader"
-                style={{ fontSize: 17, fontWeight: 500 }}
-              >
-                {b.name}
-              </div>
-              <div style={{ font: '500 12px "IBM Plex Mono",monospace' }}>
-                {b.pct}%
-              </div>
+        {reading.map((b) => (
+          <div key={b.name} className="hs-book-row">
+            <div className="hs-row-between">
+              <div className="hs-newsreader hs-book-title">{b.name}</div>
+              <div className="hs-book-pct">{b.pct}%</div>
             </div>
             <div className="hs-meta-sm" style={{ marginTop: 3 }}>
               {b.meta}
             </div>
-            <div
-              style={{
-                height: 4,
-                background: 'var(--track)',
-                borderRadius: 2,
-                marginTop: 12,
-              }}
-            >
-              <div
-                style={{
-                  width: b.pct + '%',
-                  height: '100%',
-                  background: 'var(--accent)',
-                  borderRadius: 2,
-                  transformOrigin: 'left',
-                  animation:
-                    'barGrow .8s cubic-bezier(.22,1,.36,1) .2s backwards',
-                }}
-              />
+            <div style={{ marginTop: 12 }}>
+              {/* A brand-new book shows a sliver rather than nothing at all. */}
+              <Bar pct={b.pct || 1} />
             </div>
           </div>
         ))}
-        {newReading.map((b) => (
-          <div
-            key={b.name}
-            style={{
-              padding: '16px 0',
-              borderBottom: '1px solid var(--line-soft)',
-              animation: 'rowIn .35s ease backwards',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
-              }}
-            >
-              <div
-                className="hs-newsreader"
-                style={{ fontSize: 17, fontWeight: 500 }}
-              >
-                {b.name}
-              </div>
-              <div style={{ font: '500 12px "IBM Plex Mono",monospace' }}>
-                0%
-              </div>
-            </div>
-            <div className="hs-meta-sm" style={{ marginTop: 3 }}>
-              {b.author} · STARTED JUL 14
-            </div>
-            <div
-              style={{
-                height: 4,
-                background: 'var(--track)',
-                borderRadius: 2,
-                marginTop: 12,
-              }}
-            >
-              <div
-                style={{
-                  width: '1%',
-                  height: '100%',
-                  background: 'var(--accent)',
-                  borderRadius: 2,
-                }}
-              />
-            </div>
-          </div>
-        ))}
+
         <div className="hs-section-label" style={{ marginTop: 28 }}>
           TO READ
         </div>
-        {SEED_TO_READ.map((b) => (
-          <div
-            key={b.name}
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '12px 0',
-              borderBottom: '1px solid var(--line-soft)',
-            }}
-          >
+        {toRead.map((b) => (
+          <div key={b.name} className="hs-to-read-row">
             <div>
               <div className="hs-newsreader" style={{ fontSize: 15 }}>
                 {b.name}
@@ -286,117 +149,36 @@ export function Books({ vm }: { vm: HomeState }) {
                 {b.author}
               </div>
             </div>
-            <button
-              type="button"
-              style={{
-                font: '400 10px "IBM Plex Mono",monospace',
-                color: 'var(--accent)',
-                cursor: 'pointer',
-                background: 'none',
-                border: 'none',
-              }}
-            >
+            <button type="button" className="hs-hobby-cta" onClick={b.start}>
               START →
             </button>
           </div>
         ))}
-        {newBooks.map((b) => (
-          <div
-            key={b.name}
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '12px 0',
-              borderBottom: '1px solid var(--line-soft)',
-              animation: 'rowIn .35s ease backwards',
-            }}
-          >
-            <div>
-              <div className="hs-newsreader" style={{ fontSize: 15 }}>
-                {b.name}
-              </div>
-              <div className="hs-meta-sm" style={{ marginTop: 2 }}>
-                {b.author}
-              </div>
-            </div>
-            <button
-              type="button"
-              style={{
-                font: '400 10px "IBM Plex Mono",monospace',
-                color: 'var(--accent)',
-                cursor: 'pointer',
-                background: 'none',
-                border: 'none',
-              }}
-              onClick={b.start}
-            >
-              START →
-            </button>
-          </div>
-        ))}
-        <button
-          type="button"
-          className="hs-add-row"
-          onClick={openC('book')}
-          style={{ cursor: 'pointer', width: '100%' }}
-        >
-          <div className="hs-add-plus">+</div>
-          <div
-            style={{
-              flex: 1,
-              font: '400 13px "IBM Plex Sans",sans-serif',
-              color: 'var(--muted)',
-              textAlign: 'left',
-            }}
-          >
-            Add a book to the pile
-          </div>
-          <div className="hs-add-details">+ ADD</div>
-        </button>
+
+        <AddRow label="Add a book to the pile" onClick={openC('book')} />
       </div>
+
       <div className="hs-rail narrow">
         <div>
           <div className="hs-section-label">2026 PACE</div>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'baseline',
-              gap: 8,
-              marginTop: 14,
-            }}
-          >
-            <div style={{ font: '500 32px "IBM Plex Mono",monospace' }}>
-              14<span style={{ color: 'var(--muted)', fontSize: 19 }}>/24</span>
+          <div className="hs-big-stat">
+            <div className="hs-big-stat-value">
+              14<span className="hs-big-stat-total">/24</span>
             </div>
             <div style={{ fontSize: 12, color: 'var(--text-2)' }}>finished</div>
           </div>
           <div className="hs-bar-track" style={{ height: 6, marginTop: 12 }}>
             <div className="hs-bar-fill" style={{ width: '58%' }} />
           </div>
-          <div
-            style={{
-              font: '400 10px "IBM Plex Mono",monospace',
-              color: 'var(--positive)',
-              marginTop: 10,
-            }}
-          >
+          <div className="hs-delta-row" style={{ marginTop: 10 }}>
             ▲ 1.6 BOOKS AHEAD OF PACE
           </div>
         </div>
+
         <div>
           <div className="hs-section-label">RECENTLY FINISHED</div>
           {SEED_FINISHED_BOOKS.map((b) => (
-            <div
-              key={b.name}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
-                padding: '9px 0',
-                borderBottom: '1px solid var(--line-soft)',
-              }}
-            >
+            <div key={b.name} className="hs-rail-row">
               <div className="hs-newsreader" style={{ fontSize: 14 }}>
                 {b.name}
               </div>
@@ -409,8 +191,22 @@ export function Books({ vm }: { vm: HomeState }) {
   )
 }
 
+/* --------------------------------------------------------------- Quotes */
+
+const RESURFACED = {
+  text: 'What you do every day matters more than what you do once in a while.',
+  author: 'GRETCHEN RUBIN',
+  saved: 'MAR 2026',
+}
+
 export function Quotes({ vm }: { vm: HomeState }) {
   const { newQuotes, openC } = vm
+
+  const quotes = [
+    ...newQuotes.map((q) => ({ ...q, saved: 'JUL 2026' })),
+    ...SEED_QUOTES,
+  ]
+
   return (
     <div className="hs-screen">
       <div style={{ maxWidth: 640 }}>
@@ -421,70 +217,23 @@ export function Quotes({ vm }: { vm: HomeState }) {
         <div className="hs-meta" style={{ marginBottom: 26 }}>
           THINGS WORTH RE-READING
         </div>
-        <div
-          style={{
-            padding: '20px 0',
-            borderTop: '1px solid var(--ink)',
-            borderBottom: '1px solid var(--line-soft)',
-          }}
-        >
-          <div
-            className="hs-newsreader"
-            style={{ fontSize: 19, lineHeight: 1.55, color: '#3D382F' }}
-          >
-            &ldquo;What you do every day matters more than what you do once in a
-            while.&rdquo;
+
+        {/* Today's resurfaced quote sits above the log, ruled off from it. */}
+        <div className="hs-quote-row is-resurfaced">
+          <div className="hs-newsreader hs-quote-text">
+            &ldquo;{RESURFACED.text}&rdquo;
           </div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginTop: 10,
-            }}
-          >
-            <div className="hs-meta-sm">— GRETCHEN RUBIN · SAVED MAR 2026</div>
-            <div
-              style={{
-                font: '400 10px "IBM Plex Mono",monospace',
-                color: 'var(--accent)',
-              }}
-            >
-              RESURFACED TODAY
+          <div className="hs-row-between" style={{ marginTop: 10 }}>
+            <div className="hs-meta-sm">
+              — {RESURFACED.author} · SAVED {RESURFACED.saved}
             </div>
+            <div className="hs-quote-flag">RESURFACED TODAY</div>
           </div>
         </div>
-        {newQuotes.map((q, i) => (
-          <div
-            key={i}
-            style={{
-              padding: '20px 0',
-              borderBottom: '1px solid var(--line-soft)',
-              animation: 'rowIn .35s ease backwards',
-            }}
-          >
-            <div
-              className="hs-newsreader"
-              style={{ fontSize: 19, lineHeight: 1.55, color: '#3D382F' }}
-            >
-              &ldquo;{q.text}&rdquo;
-            </div>
-            <div className="hs-meta-sm" style={{ marginTop: 10 }}>
-              — {q.author} · SAVED JUL 2026
-            </div>
-          </div>
-        ))}
-        {SEED_QUOTES.map((q) => (
-          <div
-            key={q.author}
-            style={{
-              padding: '20px 0',
-              borderBottom: '1px solid var(--line-soft)',
-            }}
-          >
-            <div
-              className="hs-newsreader"
-              style={{ fontSize: 19, lineHeight: 1.55, color: '#3D382F' }}
-            >
+
+        {quotes.map((q, i) => (
+          <div key={q.author + i} className="hs-quote-row">
+            <div className="hs-newsreader hs-quote-text">
               &ldquo;{q.text}&rdquo;
             </div>
             <div className="hs-meta-sm" style={{ marginTop: 10 }}>
@@ -492,34 +241,30 @@ export function Quotes({ vm }: { vm: HomeState }) {
             </div>
           </div>
         ))}
-        <button
-          type="button"
-          className="hs-add-row"
-          onClick={openC('quote')}
-          style={{ cursor: 'pointer', width: '100%' }}
-        >
-          <div className="hs-add-plus" style={{ fontSize: 14 }}>
-            +
-          </div>
-          <div
-            style={{
-              flex: 1,
-              font: '400 13px "IBM Plex Sans",sans-serif',
-              color: 'var(--muted)',
-              textAlign: 'left',
-            }}
-          >
-            Save a quote worth keeping
-          </div>
-          <div className="hs-add-details">+ ADD</div>
-        </button>
+
+        <AddRow label="Save a quote worth keeping" onClick={openC('quote')} />
       </div>
     </div>
   )
 }
 
+/* ------------------------------------------------------------- Wishlist */
+
 export function Wishlist({ vm }: { vm: HomeState }) {
   const { newWish, openC } = vm
+
+  // Anything the user has just added starts at day zero of its cooling-off
+  // period, so it joins the "still cooling" list rather than getting its own.
+  const cooling = [
+    ...SEED_COOLING,
+    ...newWish.map((w) => ({
+      name: w.name,
+      meta: `${w.cat} · 0 OF 30 DAYS`,
+      pct: 2,
+      price: w.price,
+    })),
+  ]
+
   return (
     <div className="hs-screen with-rail">
       <div className="hs-main-col wide">
@@ -530,193 +275,59 @@ export function Wishlist({ vm }: { vm: HomeState }) {
         <div className="hs-meta" style={{ marginBottom: 24 }}>
           WAIT 30 DAYS BEFORE BUYING
         </div>
+
         <div className="hs-section-label">READY TO BUY · COOLED OFF</div>
         {SEED_READY_TO_BUY.map((w) => (
-          <div
-            key={w.name}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 16,
-              padding: '14px 0',
-              borderBottom: '1px solid var(--line-soft)',
-            }}
-          >
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14.5, fontWeight: 500 }}>{w.name}</div>
+          <div key={w.name} className="hs-wish-row">
+            <div className="hs-wish-body">
+              <div className="hs-wish-name">{w.name}</div>
               <div className="hs-row-sub">{w.meta}</div>
             </div>
-            <div
-              style={{
-                font: '500 13px "IBM Plex Mono",monospace',
-                flex: 'none',
-              }}
-            >
-              {w.price}
-            </div>
-            <div
-              style={{
-                font: '500 9px "IBM Plex Mono",monospace',
-                letterSpacing: '.1em',
-                color: 'var(--paper)',
-                background: 'var(--accent)',
-                padding: '7px 11px',
-                cursor: 'pointer',
-                flex: 'none',
-              }}
-            >
+            <div className="hs-wish-price">{w.price}</div>
+            <button type="button" className="hs-btn-buy">
               BUY
-            </div>
+            </button>
           </div>
         ))}
+
         <div className="hs-section-label" style={{ marginTop: 28 }}>
           STILL COOLING
         </div>
-        {SEED_COOLING.map((w) => (
-          <div
-            key={w.name}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 16,
-              padding: '14px 0',
-              borderBottom: '1px solid var(--line-soft)',
-            }}
-          >
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14.5, fontWeight: 500 }}>{w.name}</div>
+        {cooling.map((w, i) => (
+          <div key={w.name + i} className="hs-wish-row">
+            <div className="hs-wish-body">
+              <div className="hs-wish-name">{w.name}</div>
               <div className="hs-row-sub">{w.meta}</div>
             </div>
-            <div
-              style={{
-                width: 60,
-                height: 4,
-                background: 'var(--track)',
-                borderRadius: 2,
-                flex: 'none',
-              }}
-            >
-              <div
-                style={{
-                  width: w.pct + '%',
-                  height: '100%',
-                  background: '#C0913C',
-                  borderRadius: 2,
-                }}
-              />
+            <div className="hs-cool-bar">
+              <Bar pct={w.pct} color="var(--warn)" />
             </div>
-            <div
-              style={{
-                font: '500 13px "IBM Plex Mono",monospace',
-                flex: 'none',
-              }}
-            >
-              {w.price}
-            </div>
+            <div className="hs-wish-price">{w.price}</div>
           </div>
         ))}
-        {newWish.map((w, i) => (
-          <div
-            key={i}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 16,
-              padding: '14px 0',
-              borderBottom: '1px solid var(--line-soft)',
-              animation: 'rowIn .35s ease backwards',
-            }}
-          >
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14.5, fontWeight: 500 }}>{w.name}</div>
-              <div className="hs-row-sub">{w.cat} · 0 OF 30 DAYS</div>
-            </div>
-            <div
-              style={{
-                width: 60,
-                height: 4,
-                background: 'var(--track)',
-                borderRadius: 2,
-                flex: 'none',
-              }}
-            >
-              <div
-                style={{
-                  width: '2%',
-                  height: '100%',
-                  background: '#C0913C',
-                  borderRadius: 2,
-                }}
-              />
-            </div>
-            <div
-              style={{
-                font: '500 13px "IBM Plex Mono",monospace',
-                flex: 'none',
-              }}
-            >
-              {w.price}
-            </div>
-          </div>
-        ))}
-        <button
-          type="button"
-          className="hs-add-row"
+
+        <AddRow
+          label="Want something? Park it here first"
           onClick={openC('wish')}
-          style={{ cursor: 'pointer', width: '100%' }}
-        >
-          <div className="hs-add-plus" style={{ fontSize: 14 }}>
-            +
-          </div>
-          <div
-            style={{
-              flex: 1,
-              font: '400 13px "IBM Plex Sans",sans-serif',
-              color: 'var(--muted)',
-              textAlign: 'left',
-            }}
-          >
-            Want something? Park it here first
-          </div>
-          <div className="hs-add-details">+ ADD</div>
-        </button>
+        />
       </div>
+
       <div className="hs-rail narrow">
         <div>
           <div className="hs-section-label">SAVED BY WAITING</div>
-          <div
-            style={{
-              font: '500 32px "IBM Plex Mono",monospace',
-              marginTop: 14,
-            }}
-          >
+          <div className="hs-big-stat-value" style={{ marginTop: 14 }}>
             ₹41,200
           </div>
           <div className="hs-meta-sm" style={{ marginTop: 8 }}>
             6 ITEMS DROPPED AFTER COOLING OFF · 2026
           </div>
         </div>
+
         <div>
           <div className="hs-section-label">RECENTLY DROPPED</div>
           {SEED_DROPPED.map((d) => (
-            <div
-              key={d.name}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                padding: '9px 0',
-                borderBottom: '1px solid var(--line-soft)',
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 13,
-                  color: 'var(--muted)',
-                  textDecoration: 'line-through',
-                }}
-              >
-                {d.name}
-              </div>
+            <div key={d.name} className="hs-rail-row">
+              <div className="hs-done-text">{d.name}</div>
               <div className="hs-meta-sm">{d.price}</div>
             </div>
           ))}

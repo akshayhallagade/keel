@@ -530,6 +530,206 @@
   opacity: 1;
 }
 
+/* ---------- Cards, bars and add-rows shared by the Life screens ---------- */
+.hs-card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.hs-card-title {
+  font-size: 15.5px;
+  font-weight: 600;
+}
+.hs-card-status {
+  font: 500 9px var(--mono);
+  letter-spacing: 0.1em;
+}
+.hs-card-foot {
+  border-top: 1px solid var(--line-soft);
+  margin-top: 14px;
+  padding-top: 12px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.hs-bar-track.sm {
+  height: 4px;
+  border-radius: 2px;
+}
+.hs-bar-fill.is-grown {
+  border-radius: 2px;
+  background: var(--accent);
+  transform-origin: left;
+  animation: barGrow 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.2s backwards;
+}
+
+/* The add-row rendered as a button rather than an input. */
+.hs-add-row.is-button {
+  cursor: pointer;
+  width: 100%;
+}
+.hs-add-prompt {
+  flex: 1;
+  font: 400 13px var(--sans);
+  color: var(--muted);
+  text-align: left;
+}
+
+/* ---------- Books ---------- */
+.hs-book-row {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line-soft);
+  animation: rowIn 0.35s ease backwards;
+}
+.hs-book-title {
+  font-size: 17px;
+  font-weight: 500;
+}
+.hs-book-pct {
+  font: 500 12px var(--mono);
+}
+.hs-to-read-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line-soft);
+  animation: rowIn 0.35s ease backwards;
+}
+
+/* ---------- Quotes ---------- */
+.hs-quote-row {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line-soft);
+  animation: rowIn 0.35s ease backwards;
+}
+.hs-quote-row.is-resurfaced {
+  border-top: 1px solid var(--ink);
+  animation: none;
+}
+.hs-quote-text {
+  font-size: 19px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+.hs-quote-flag {
+  font: 400 10px var(--mono);
+  color: var(--accent);
+}
+
+/* ---------- Wishlist ---------- */
+.hs-wish-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line-soft);
+  animation: rowIn 0.35s ease backwards;
+}
+.hs-wish-body {
+  flex: 1;
+  min-width: 0;
+}
+.hs-wish-name {
+  font-size: 14.5px;
+  font-weight: 500;
+}
+.hs-wish-price {
+  font: 500 13px var(--mono);
+  flex: none;
+}
+.hs-cool-bar {
+  width: 60px;
+  flex: none;
+}
+.hs-btn-buy {
+  font: 500 9px var(--mono);
+  letter-spacing: 0.1em;
+  color: var(--paper);
+  background: var(--accent);
+  border: none;
+  padding: 7px 11px;
+  cursor: pointer;
+  flex: none;
+}
+
+/* ---------- Money ---------- */
+/* The rule-topped summary strip at the head of Investments and Accounts. */
+.hs-stat-strip {
+  display: flex;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--line);
+  padding: 18px 0;
+  margin-bottom: 24px;
+}
+.hs-stat-col {
+  flex: 1;
+}
+.hs-stat-col.is-bordered {
+  border-left: 1px solid var(--line);
+  padding-left: 28px;
+}
+.hs-stat-col-label {
+  font: 500 9px var(--mono);
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+.hs-stat-col-value {
+  font: 500 24px var(--mono);
+  margin-top: 6px;
+}
+
+.hs-two-col {
+  display: flex;
+  gap: 40px;
+}
+.hs-two-col-main {
+  flex: 1.5;
+  min-width: 0;
+}
+
+.hs-acct-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.hs-acct-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+.hs-acct-value {
+  font: 500 14px var(--mono);
+}
+.hs-holding-value {
+  font: 500 13px var(--mono);
+  width: 100px;
+  text-align: right;
+}
+.hs-holding-return {
+  font: 500 12px var(--mono);
+  width: 76px;
+  text-align: right;
+}
+.hs-mini-value {
+  font: 400 10px var(--mono);
+  color: var(--muted);
+}
+.hs-accent-note {
+  font: 400 10px var(--mono);
+  color: var(--accent);
+  margin-top: 10px;
+}
+.hs-envelope-note {
+  font: 400 10px var(--mono);
+  margin-top: 6px;
+}
+/* The "/DAY" style suffix on a big figure. */
+.hs-unit {
+  color: var(--muted);
+  font-size: 10px;
+}
+
 /* ---------- Projects ---------- */
 .hs-next-task {
   font-size: 13px;
