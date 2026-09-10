@@ -61,5 +61,56 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  todos Todo[]
+
   @@map("users")
+}
+
+/// Which list a todo sits in on the Todos screen.
+/// Deliberately separate from dueAt: the user picks the bucket, and a "this
+/// week" todo may still have no date at all. See docs/decisions.md.
+enum TodoBucket {
+  TODAY
+  THIS_WEEK
+  SOMEDAY
+}
+
+model Todo {
+  id String @id @default(cuid())
+
+  /// Every row has an owner, and every query filters by it. onDelete: Cascade
+  /// so closing an account takes its data with it.
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  text String @db.VarChar(500)
+  /// Free text, matching the area chips (FINANCE, HOME, HEALTH, ...). Not an
+  /// enum: these are product copy and change more often than a migration is
+  /// worth.
+  area String @db.VarChar(40)
+
+  bucket TodoBucket @default(TODAY)
+
+  /// A real instant, never a phrase like "OVERDUE 2D". Whether something is
+  /// overdue is worked out when it is read, against the reader's clock.
+  /// Null means no date — the Someday pile.
+  dueAt DateTime?
+
+  /// Top 3 on the Today screen.
+  starred Boolean @default(false)
+
+  /// When it was ticked off. Null means still open — this doubles as the
+  /// "done" flag, and keeps the moment, which a boolean would throw away.
+  completedAt DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  /// Soft delete: rows are never removed, so an accidental delete is
+  /// recoverable and sync can still see that something went.
+  deletedAt DateTime?
+
+  /// The list query is always "this user's, not deleted, ordered". Postgres
+  /// can serve that straight from this index.
+  @@index([userId, deletedAt, createdAt])
+  @@map("todos")
 }
