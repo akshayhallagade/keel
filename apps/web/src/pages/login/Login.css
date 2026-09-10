@@ -415,3 +415,57 @@
     display: none;
   }
 }
+
+/* Password reveal ------------------------------------------------------- */
+
+.field-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Keep typed text clear of the button. */
+.field-input-wrap .field-input {
+  padding-right: 42px;
+}
+
+.reveal-btn {
+  position: absolute;
+  right: 5px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.reveal-btn:hover,
+.reveal-btn[aria-pressed='true'] {
+  color: var(--accent);
+}
+
+.reveal-btn:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: -3px;
+}
+
+.reveal-sun {
+  transition: transform 0.34s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reveal-rays {
+  transition: opacity 0.22s ease;
+}
+
+/* Respect users who have asked for less motion: the sun still moves, but instantly. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal-sun,
+  .reveal-rays {
+    transition: none;
+  }
+}

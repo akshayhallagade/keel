@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import gsap from 'gsap'
 import type { User } from '@keel/types'
 import LogoMark from '../../components/LogoMark'
+import RevealToggle from '../../components/RevealToggle'
 import { checkEmail, login as loginRequest, signup } from '../../api/auth'
 import { ApiError } from '../../api/client'
 import './Login.css'
@@ -54,6 +55,8 @@ export default function Login({ onAuthenticated }: LoginProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [remember, setRemember] = useState(false)
   const [error, setError] = useState<ValidationError>({
     field: '',
@@ -710,13 +713,19 @@ export default function Login({ onAuthenticated }: LoginProps) {
                         </button>
                       )}
                     </div>
-                    <input
-                      type="password"
-                      className="field-input"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="At least 6 characters"
-                    />
+                    <div className="field-input-wrap">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        className="field-input"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="At least 8 characters"
+                      />
+                      <RevealToggle
+                        shown={showPassword}
+                        onToggle={() => setShowPassword((v) => !v)}
+                      />
+                    </div>
                     {step === 'details' && password.length > 0 && (
                       <div>
                         <div className="strength-row">
@@ -769,21 +778,27 @@ export default function Login({ onAuthenticated }: LoginProps) {
                 {step === 'details' && (
                   <div className="field" ref={confirmFieldRef}>
                     <div className="field-label">CONFIRM PASSWORD</div>
-                    <input
-                      type="password"
-                      className="field-input"
-                      value={confirm}
-                      onChange={(e) => setConfirm(e.target.value)}
-                      placeholder="Type it again"
-                      style={{
-                        borderColor:
-                          confirm.length > 0
-                            ? confirmMatches
-                              ? '#5B7B4F'
-                              : '#E5E0D6'
-                            : '#E5E0D6',
-                      }}
-                    />
+                    <div className="field-input-wrap">
+                      <input
+                        type={showConfirm ? 'text' : 'password'}
+                        className="field-input"
+                        value={confirm}
+                        onChange={(e) => setConfirm(e.target.value)}
+                        placeholder="Type it again"
+                        style={{
+                          borderColor:
+                            confirm.length > 0
+                              ? confirmMatches
+                                ? '#5B7B4F'
+                                : '#E5E0D6'
+                              : '#E5E0D6',
+                        }}
+                      />
+                      <RevealToggle
+                        shown={showConfirm}
+                        onToggle={() => setShowConfirm((v) => !v)}
+                      />
+                    </div>
                     {confirm.length > 0 && (
                       <div
                         className="confirm-hint"

@@ -104,3 +104,16 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* Browsers paint autofilled inputs with their own background and ignore a plain
+   `background` declaration. An inset shadow large enough to cover the box is the
+   one thing that does get through, so it repaints the field in our own colour.
+   Global on purpose: login, onboarding and settings all have autofillable inputs,
+   and --input-bg inherits from whichever shell the field sits in. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 100px var(--input-bg) inset;
+  -webkit-text-fill-color: var(--ink);
+  caret-color: var(--ink);
+}
