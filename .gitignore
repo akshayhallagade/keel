@@ -33,3 +33,6 @@ backend/db/prisma/migrations/dev.db*
 *.njsproj
 *.sln
 *.sw?
+
+# Generated knowledge graph (graphify) — a rebuildable cache, not source
+graphify-out

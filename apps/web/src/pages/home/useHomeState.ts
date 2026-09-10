@@ -63,24 +63,25 @@ const MONF = [
 ]
 const R_MINS = [0, 15, 30, 45]
 
-const isISO = (s: string | undefined) => /^\d{4}-\d{2}-\d{2}$/.test(s || '')
-const fmtDue = (s: string) => {
+export const isISO = (s: string | undefined) =>
+  /^\d{4}-\d{2}-\d{2}$/.test(s || '')
+export const fmtDue = (s: string) => {
   if (!isISO(s)) return s || ''
   const d = new Date(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10))
   return d.getDate() + ' ' + MON3[d.getMonth()]
 }
-const parseInr = (v: string) => {
+export const parseInr = (v: string) => {
   const n = parseInt(String(v).replace(/[^0-9]/g, ''), 10)
   return isNaN(n) ? '₹—' : '₹' + n.toLocaleString('en-IN')
 }
 const pad2 = (n: number) => String(n).padStart(2, '0')
-const isoOf = (y: number, m: number, d: number) =>
+export const isoOf = (y: number, m: number, d: number) =>
   `${y}-${pad2(m + 1)}-${pad2(d)}`
 const rMM = (idx: number) => {
   const v = R_MINS[idx]
   return v < 10 ? '0' + v : String(v)
 }
-const parseRTime = (str: string) => {
+export const parseRTime = (str: string) => {
   const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec((str || '').trim())
   if (!m) return null
   const hour = parseInt(m[1], 10)

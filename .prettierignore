@@ -4,3 +4,4 @@ node_modules
 .claude
 pnpm-lock.yaml
 backend/db/prisma/migrations
+graphify-out

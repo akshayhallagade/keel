@@ -9,7 +9,13 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/keel_test
+      # Nothing in CI opens a database connection: the API tests mock the repository
+      # layer, `prisma generate` reads the schema file, and `build` is type-checking
+      # only. This value exists purely because config/env.ts requires DATABASE_URL to
+      # be set, so it is spelled to look like what it is rather than like a real,
+      # reachable database. Add a `services: postgres:` block below if a test that
+      # actually queries ever lands.
+      DATABASE_URL: postgresql://unused:unused@127.0.0.1:5432/keel_no_db_in_ci
       JWT_SECRET: ci-test-secret
     steps:
       - uses: actions/checkout@v4
