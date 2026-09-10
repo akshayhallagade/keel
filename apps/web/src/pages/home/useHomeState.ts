@@ -55,6 +55,17 @@ export const parseInr = (v: string) => {
   const n = parseInt(String(v).replace(/[^0-9]/g, ''), 10)
   return isNaN(n) ? '₹—' : '₹' + n.toLocaleString('en-IN')
 }
+/// Up to two letters for the avatar. Falls back to ME when a name is blank or
+/// has nothing alphabetic in it, so the circle is never empty.
+export const initialsOf = (name: string) =>
+  name
+    .trim()
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'ME'
+
 const pad2 = (n: number) => String(n).padStart(2, '0')
 export const isoOf = (y: number, m: number, d: number) =>
   `${y}-${pad2(m + 1)}-${pad2(d)}`

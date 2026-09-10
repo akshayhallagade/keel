@@ -1,5 +1,5 @@
 import LogoMark from '../../components/LogoMark'
-import type { HomeState } from './useHomeState'
+import { initialsOf, type HomeState } from './useHomeState'
 import type { Screen } from './types'
 
 const NAV_SECTIONS: {
@@ -45,14 +45,7 @@ const NAV_SECTIONS: {
 
 export default function Sidebar({ vm }: { vm: HomeState }) {
   const { screen, go, accent, profile } = vm
-  const initials =
-    profile.name
-      .trim()
-      .split(/\s+/)
-      .map((w) => w[0])
-      .join('')
-      .slice(0, 2)
-      .toUpperCase() || 'ME'
+  const initials = initialsOf(profile.name)
 
   return (
     <div className="hs-sidebar">

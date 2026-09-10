@@ -1,10 +1,24 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { z } from 'zod'
 
-try {
-  process.loadEnvFile()
-} catch {
-  // no .env file present — rely on vars injected by the host environment
+const dirname = path.dirname(fileURLToPath(import.meta.url))
+
+function load(file: string) {
+  try {
+    process.loadEnvFile(file)
+  } catch {
+    // Absent is fine — the host may inject these directly.
+  }
 }
+
+// DATABASE_URL lives in @keel/db's .env, which is also what the Prisma CLI
+// reads (see backend/db/prisma.config.ts). Loading it here rather than keeping
+// a second copy means `pnpm db:migrate` and the running API can never end up
+// pointed at different databases.
+load(path.join(dirname, '../../../db/.env'))
+// The API's own .env second, so it wins on anything it sets.
+load(path.join(dirname, '../../.env'))
 
 const envSchema = z.object({
   PORT: z.coerce.number().default(4000),

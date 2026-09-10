@@ -928,15 +928,110 @@
   transition: background 0.2s;
   border: none;
   padding: 0;
+  width: 32px;
+  height: 18px;
+  background: var(--track-off);
+}
+.hs-toggle-track.is-on {
+  background: var(--ink);
 }
 .hs-toggle-knob {
   position: absolute;
   top: 2px;
+  left: 2px;
   width: 14px;
   height: 14px;
   border-radius: 50%;
   background: var(--paper);
   transition: left 0.2s;
+}
+.hs-toggle-track.is-on .hs-toggle-knob {
+  left: 16px;
+}
+
+/* ---------- Settings ---------- */
+.hs-profile-edit {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.hs-profile-edit-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.hs-field-input.is-mono-plain {
+  font: 400 12.5px var(--mono);
+}
+.hs-settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.hs-settings-row-title {
+  font-size: 14px;
+  font-weight: 500;
+}
+.hs-settings-action {
+  font: 400 10px var(--mono);
+  color: var(--accent);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+.hs-settings-action.is-mute {
+  color: var(--muted);
+}
+.hs-pref-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.hs-pref-row:last-child {
+  border-bottom: none;
+  justify-content: space-between;
+}
+.hs-danger-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 26px;
+}
+.hs-btn-outline {
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  font: 500 10px var(--mono);
+  letter-spacing: 0.1em;
+  padding: 11px 16px;
+  cursor: pointer;
+  background: none;
+}
+.hs-btn-outline.is-danger {
+  border-color: #e8cfc8;
+  color: var(--accent);
+}
+
+/* Accent picker. The inset ring is what reads as "selected" on a filled
+   circle — a border alone disappears against a dark swatch. */
+.hs-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  box-sizing: border-box;
+  border: 1.5px solid transparent;
+  padding: 0;
+}
+.hs-swatch.is-selected {
+  box-shadow: inset 0 0 0 2.5px var(--paper);
+  border-color: var(--ink);
 }
 
 /* ---------- Inputs / add-rows ---------- */
