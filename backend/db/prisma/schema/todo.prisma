@@ -19,8 +19,13 @@ model Todo {
   /// real rows exist it would mean two id formats in one column forever.
   id String @id @default(cuid(2))
 
-  /// Every row has an owner, and every query filters by it. onDelete: Cascade
-  /// so closing an account takes its data with it.
+  /// Every row has an owner, and every query filters by it.
+  ///
+  /// Cascade is a backstop for a genuine hard delete, not the thing that
+  /// handles account closure. Closing an account is a soft delete — an UPDATE —
+  /// and a cascade only fires on a real DELETE, so it would leave these rows
+  /// live under an invisible owner. `userRepository.closeAccount` tombstones
+  /// them explicitly.
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -52,6 +57,14 @@ model Todo {
 
   /// The list query is always "this user's, not deleted, ordered". Postgres
   /// can serve that straight from this index.
+  ///
+  /// Leading with userId is what also makes the foreign key usable: Postgres
+  /// does not index foreign keys on its own, and a composite index serves any
+  /// left-hand prefix of its columns. Reordering these would quietly turn
+  /// every cascade delete into a full scan.
   @@index([userId, deletedAt, createdAt])
+  /// "What changed since this device last synced" — the question updatedAt
+  /// exists to answer. Without this it could only be answered by scanning.
+  @@index([userId, updatedAt])
   @@map("todos")
 }

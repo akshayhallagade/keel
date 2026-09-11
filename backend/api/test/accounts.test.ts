@@ -176,6 +176,80 @@ describe('concurrent signups for one address', () => {
   })
 })
 
+describe('DELETE /users/me', () => {
+  // onDelete: Cascade does not cover this. A soft delete is an UPDATE and a
+  // cascade only fires on a real DELETE, so closing an account used to leave
+  // every one of its todos live under an owner the app could no longer see.
+  it('tombstones the account and everything it owns', async () => {
+    const created = await signup('closed@test.keel')
+    const token = created.body.accessToken
+    const { id } = await prisma.user.findFirstOrThrow({
+      where: { email: 'closed@test.keel' },
+    })
+
+    await call('/todos', { token, body: { text: 'one' } })
+    await call('/todos', { token, body: { text: 'two' } })
+    expect(await prisma.todo.count({ where: { userId: id } })).toBe(2)
+
+    const res = await call('/users/me', { method: 'DELETE', token })
+    expect(res.status).toBe(204)
+
+    // Nothing removed — every row is still there, all of it tombstoned.
+    const todos = await prisma.todo.findMany({ where: { userId: id } })
+    expect(todos).toHaveLength(2)
+    expect(todos.every((t) => t.deletedAt !== null)).toBe(true)
+
+    const user = await prisma.user.findUnique({ where: { id } })
+    expect(user?.deletedAt).toBeInstanceOf(Date)
+  })
+
+  it('stamps the account and its rows at the same instant', async () => {
+    const created = await signup('closed@test.keel')
+    const token = created.body.accessToken
+    await call('/todos', { token, body: { text: 'one' } })
+
+    await call('/users/me', { method: 'DELETE', token })
+
+    const { id, deletedAt } = await prisma.user.findFirstOrThrow({
+      where: { email: 'closed@test.keel' },
+    })
+    const todo = await prisma.todo.findFirstOrThrow({ where: { userId: id } })
+    expect(todo.deletedAt?.getTime()).toBe(deletedAt?.getTime())
+  })
+
+  it('kills the token that made the request', async () => {
+    const created = await signup('closed@test.keel')
+    const token = created.body.accessToken
+
+    await call('/users/me', { method: 'DELETE', token })
+
+    expect((await call('/users/me', { token })).status).toBe(401)
+    expect((await call('/todos', { token })).status).toBe(401)
+  })
+
+  it('requires a token', async () => {
+    expect((await call('/users/me', { method: 'DELETE' })).status).toBe(401)
+  })
+
+  it('leaves other accounts alone', async () => {
+    const keep = await signup('case@test.keel')
+    await call('/todos', {
+      token: keep.body.accessToken,
+      body: { text: 'mine' },
+    })
+
+    const doomed = await signup('closed@test.keel')
+    await call('/users/me', {
+      method: 'DELETE',
+      token: doomed.body.accessToken,
+    })
+
+    const res = await call('/todos', { token: keep.body.accessToken })
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveLength(1)
+  })
+})
+
 describe('soft delete keeps the row', () => {
   it('sets deletedAt rather than removing the user', async () => {
     await signup('closed@test.keel')

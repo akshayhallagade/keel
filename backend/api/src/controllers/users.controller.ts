@@ -17,3 +17,11 @@ export const updateMe = asyncHandler(async (req, res) => {
   const user = await usersService.update(req.userId!, input)
   res.status(200).json(toPublicUser(user))
 })
+
+/// Closes the account and tombstones everything it owns. The caller's token
+/// stops working immediately, because requireAuth re-reads the account on
+/// every request and closed accounts are excluded from every lookup.
+export const deleteMe = asyncHandler(async (req, res) => {
+  await usersService.close(req.userId!)
+  res.status(204).end()
+})

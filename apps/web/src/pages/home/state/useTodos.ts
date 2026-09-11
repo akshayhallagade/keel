@@ -3,6 +3,7 @@ import type { Todo, TodoBucket } from '@keel/types'
 import { DOT_COLORS } from '../seedData'
 import type { TodoPanelState } from '../types'
 import * as api from '../../../api/todos'
+import { ApiError } from '../../../api/client'
 import {
   dayToInstant,
   fmtDueAt,
@@ -95,9 +96,16 @@ export function useTodos() {
       api
         .updateTodo(todo.id, { starred: next.starred })
         .then(put)
-        .catch(() => {
+        .catch((err) => {
           put(todo)
-          fail('Could not update that todo.')
+          // A full Top 3 comes back as a 409 with a message written for the
+          // person reading it. Anything else gets the generic line — an
+          // ApiError's message is only meant for humans when we chose it.
+          fail(
+            err instanceof ApiError && err.status === 409
+              ? err.message
+              : 'Could not update that todo.',
+          )
         })
     },
     [put, fail],

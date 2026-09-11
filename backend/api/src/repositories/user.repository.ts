@@ -33,4 +33,30 @@ export const userRepository = {
 
   touchLastLogin: (id: string) =>
     prisma.user.update({ where: { id }, data: { lastLoginAt: new Date() } }),
+
+  /**
+   * Closes an account and tombstones everything it owns, in one transaction.
+   *
+   * `onDelete: Cascade` does not cover this. A soft delete is an UPDATE, and a
+   * cascade only fires on a real DELETE — so without this, closing an account
+   * left every one of its todos live and undeleted, owned by a user the app
+   * can no longer see. The cascade stays on the relation as a backstop for a
+   * genuine hard delete.
+   *
+   * One `updateMany` per domain. Add a line here when a table is added, the
+   * same way `User` gains a back-relation for it.
+   *
+   * All rows share one timestamp, so "everything that went when this account
+   * closed" is a single value to query by rather than a range.
+   */
+  closeAccount: (id: string) => {
+    const closedAt = new Date()
+    return prisma.$transaction([
+      prisma.todo.updateMany({
+        where: { userId: id, deletedAt: null },
+        data: { deletedAt: closedAt },
+      }),
+      prisma.user.update({ where: { id }, data: { deletedAt: closedAt } }),
+    ])
+  },
 }

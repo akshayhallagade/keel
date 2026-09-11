@@ -13,4 +13,9 @@ export const usersService = {
       ...(completeOnboarding ? { onboardedAt: new Date() } : {}),
     })
   },
+
+  /// Closes the account and everything it owns. Reversible by hand — nothing
+  /// is removed, every row keeps a `deletedAt` — which is the point of the
+  /// soft delete; a mistaken close should not be unrecoverable.
+  close: (id: string) => userRepository.closeAccount(id),
 }

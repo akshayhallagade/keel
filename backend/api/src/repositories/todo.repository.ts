@@ -30,6 +30,19 @@ export const todoRepository = {
   findById: (userId: string, id: string) =>
     prisma.todo.findFirst({ where: { id, userId, deletedAt: null } }),
 
+  /// How many todos are currently starred. Open ones only — a completed todo
+  /// has left the Top 3 whether or not its star is still set.
+  countStarred: (userId: string, exceptId?: string) =>
+    prisma.todo.count({
+      where: {
+        userId,
+        deletedAt: null,
+        completedAt: null,
+        starred: true,
+        ...(exceptId ? { id: { not: exceptId } } : {}),
+      },
+    }),
+
   create: (userId: string, data: Omit<Prisma.TodoCreateInput, 'user'>) =>
     prisma.todo.create({
       data: { ...data, user: { connect: { id: userId } } },

@@ -262,6 +262,89 @@ describe('PATCH /todos/:id', () => {
   })
 })
 
+describe('the Top 3 star limit', () => {
+  const star = (id: string, token = aliceToken) =>
+    call(`/todos/${id}`, { method: 'PATCH', token, body: { starred: true } })
+
+  async function starThree() {
+    const ids: string[] = []
+    for (const text of ['one', 'two', 'three']) {
+      const t = await makeTodo(aliceToken, { text })
+      await star(t.body.id)
+      ids.push(t.body.id)
+    }
+    return ids
+  }
+
+  // Today renders starred.slice(0, 3). Without this the fourth star appeared
+  // to work and the todo then simply never showed up.
+  it('refuses a fourth star', async () => {
+    await starThree()
+    const fourth = await makeTodo(aliceToken, { text: 'four' })
+
+    const res = await star(fourth.body.id)
+
+    expect(res.status).toBe(409)
+    expect(res.body.error).toMatch(/top 3 is full/i)
+  })
+
+  it('refuses creating a fourth already starred', async () => {
+    await starThree()
+
+    const res = await makeTodo(aliceToken, { text: 'four', starred: true })
+
+    expect(res.status).toBe(409)
+  })
+
+  // Re-saving an already-starred todo must not count itself against the limit.
+  it('lets an already-starred todo be edited', async () => {
+    const [first] = await starThree()
+
+    const res = await call(`/todos/${first}`, {
+      method: 'PATCH',
+      token: aliceToken,
+      body: { starred: true, text: 'renamed' },
+    })
+
+    expect(res.status).toBe(200)
+    expect(res.body.text).toBe('renamed')
+  })
+
+  it('frees a slot when one is unstarred', async () => {
+    const [first] = await starThree()
+    await call(`/todos/${first}`, {
+      method: 'PATCH',
+      token: aliceToken,
+      body: { starred: false },
+    })
+
+    const fourth = await makeTodo(aliceToken, { text: 'four' })
+    expect((await star(fourth.body.id)).status).toBe(200)
+  })
+
+  // Completing a todo takes it out of Top 3, so its star should stop counting.
+  it('frees a slot when one is completed', async () => {
+    const [first] = await starThree()
+    await call(`/todos/${first}`, {
+      method: 'PATCH',
+      token: aliceToken,
+      body: { completed: true },
+    })
+
+    const fourth = await makeTodo(aliceToken, { text: 'four' })
+    expect((await star(fourth.body.id)).status).toBe(200)
+  })
+
+  it('counts each user separately', async () => {
+    await starThree()
+
+    const bobTodo = await makeTodo(bobToken, { text: 'bob one' })
+    const res = await star(bobTodo.body.id, bobToken)
+
+    expect(res.status).toBe(200)
+  })
+})
+
 describe('DELETE /todos/:id', () => {
   it('soft deletes — the row stays, with deletedAt set', async () => {
     const created = await makeTodo(aliceToken)
