@@ -16,7 +16,7 @@ Each rule below says what to do, why, and what it costs to fix later.
 ### 1. Every record has an `id`
 
 ```prisma
-id String @id @default(cuid())
+id String @id @default(cuid(2))
 ```
 
 The frontend passes that id around. It never identifies a record by its text.
