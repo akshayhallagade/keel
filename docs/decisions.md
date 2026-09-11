@@ -102,13 +102,17 @@ have filled it in.
 
 ## Decisions taken
 
-| Question       | Decision                                                                            | Revisit when                                                     |
-| -------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Session length | One JWT, 7 days, in `localStorage`. No refresh tokens.                              | "Log out all devices" is wanted, or sessions need to be shorter. |
-| Todo buckets   | `bucket` (TODAY / THIS WEEK / SOMEDAY) stays a stored field, separate from `dueAt`. | It starts disagreeing with `dueAt` often enough to annoy.        |
-| Recurrence     | Not built for todos. Routines own repetition.                                       | A todo genuinely needs to repeat.                                |
-| Time zone      | Stored per user; nothing reads it yet.                                              | The first scheduled email or push is built.                      |
-| IDs            | `cuid()`, not auto-increment integers.                                              | Never — sequential ids leak how many users you have.             |
+| Question           | Decision                                                                            | Revisit when                                                                                                                        |
+| ------------------ | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Session length     | One JWT, 7 days, in `localStorage`. No refresh tokens.                              | "Log out all devices" is wanted, or sessions need to be shorter.                                                                    |
+| Todo buckets       | `bucket` (TODAY / THIS WEEK / SOMEDAY) stays a stored field, separate from `dueAt`. | It starts disagreeing with `dueAt` often enough to annoy.                                                                           |
+| Recurrence         | Not built for todos. Routines own repetition.                                       | A todo genuinely needs to repeat.                                                                                                   |
+| Time zone          | Stored per user; nothing reads it yet.                                              | The first scheduled email or push is built.                                                                                         |
+| IDs                | `cuid(2)`, not auto-increment integers and not cuid v1.                             | Never — sequential ids leak how many users you have, and v1 encodes creation order.                                                 |
+| Onboarding answers | Eight columns on `User`, not a JSON blob or a side table.                           | Questions change often enough that a migration each time hurts. Columns stay queryable ("how many said Student?"); a blob does not. |
+| Partial indexes    | Not used — `deletedAt` sits inside the composite index instead.                     | Row counts make the difference measurable. Prisma cannot express `WHERE deletedAt IS NULL`; it needs hand-written SQL.              |
+| `dueAt` index      | None yet.                                                                           | Due-date alerts are built — that is the first query filtering on it.                                                                |
+| Password length    | Capped at 72 bytes.                                                                 | Never, while bcrypt is the hash: it reads no further and silently drops the rest.                                                   |
 
 ---
 

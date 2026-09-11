@@ -2,7 +2,15 @@ import type { SignupInput, LoginInput } from '@keel/validation'
 import { userRepository } from '../repositories/user.repository'
 import { hashPassword, verifyPassword } from '../lib/hash'
 import { signAccessToken } from '../lib/jwt'
+import { Prisma } from '@keel/db'
 import { AuthError, ConflictError } from '../lib/httpError'
+
+/// Postgres' unique-violation code, as Prisma reports it.
+const UNIQUE_VIOLATION = 'P2002'
+
+const isDuplicateEmail = (err: unknown) =>
+  err instanceof Prisma.PrismaClientKnownRequestError &&
+  err.code === UNIQUE_VIOLATION
 
 export const authService = {
   async signup(input: SignupInput) {
@@ -12,13 +20,25 @@ export const authService = {
       throw new ConflictError('An account with this email already exists')
 
     const passwordHash = await hashPassword(input.password)
-    const user = await userRepository.create({
-      email: input.email,
-      name: input.name,
-      passwordHash,
-    })
 
-    return { user, accessToken: signAccessToken(user.id) }
+    try {
+      const user = await userRepository.create({
+        email: input.email,
+        name: input.name,
+        passwordHash,
+      })
+      return { user, accessToken: signAccessToken(user.id) }
+    } catch (err) {
+      // The check above is not atomic with the insert, so the index is the
+      // real arbiter. Two simultaneous signups for one address both pass the
+      // check and one lands here — previously as an unhandled 500.
+      //
+      // A closed account reaches this too: findByEmail skips soft-deleted
+      // rows, but their email still occupies the unique index.
+      if (isDuplicateEmail(err))
+        throw new ConflictError('An account with this email already exists')
+      throw err
+    }
   },
 
   async emailExists(email: string) {

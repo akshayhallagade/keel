@@ -14,7 +14,10 @@ enum TodoBucket {
 }
 
 model Todo {
-  id String @id @default(cuid())
+  /// cuid(2), not cuid(): v1 is deprecated upstream and encodes creation order,
+  /// which these ids leak in URLs. Changed while the table is empty — after
+  /// real rows exist it would mean two id formats in one column forever.
+  id String @id @default(cuid(2))
 
   /// Every row has an owner, and every query filters by it. onDelete: Cascade
   /// so closing an account takes its data with it.

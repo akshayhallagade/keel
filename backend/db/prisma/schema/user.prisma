@@ -4,11 +4,29 @@
 // declared here (`todos Todo[]`), one line per domain, which makes this the
 // cheapest place to see everything a user owns.
 
+/// Values are lowercase because that is what the API and the client already
+/// use, and Prisma allows lowercase enum members — so this became an enum with
+/// no change to a single stored value or wire payload.
+enum Theme {
+  light
+  dark
+}
+
+enum WeekStart {
+  MON
+  SUN
+}
+
 model User {
-  id           String @id @default(cuid())
-  email        String @unique
-  passwordHash String
-  name         String
+  id String @id @default(cuid(2))
+
+  /// citext: case-insensitively unique in the database itself, so
+  /// "Demo@keel.app" cannot become a second account even for a write that
+  /// skips the zod schema — the seed script, a future admin tool, an import.
+  email        String @unique @db.Citext
+  /// bcrypt output is always exactly 60 characters.
+  passwordHash String @db.VarChar(60)
+  name         String @db.VarChar(80)
 
   // --- Onboarding answers ---
   // Stored as free text, not enums: the option lists are product copy that changes
@@ -16,14 +34,15 @@ model User {
   // QUESTIONS in apps/web/src/pages/onboarding/Onboarding.tsx.
   // Note: this is the user's job situation, NOT a permission level — hence
   // "occupation", so `role` stays free if access control ever lands.
-  occupation      String? // "Working professional", "Student", ...
-  livingSituation String? // "Living alone", "With family", ...
-  moneyHabits     String? // "I track every rupee", ...
-  investing       String? // "Yes, actively", "Just PF / basic savings", ...
-  organization    String? // "Pretty on top of things", ...
-  hobbyInterest   String? // "Reading", "Fitness / wellness", ...
-  reminderStyle   String? // "Frequent nudges", "One daily summary", ...
-  primaryGoal     String? // "Get my finances in order", ...
+  // Lengths match the 120-character cap in updateProfileSchema.
+  occupation      String? @db.VarChar(120) // "Working professional", "Student", ...
+  livingSituation String? @db.VarChar(120) // "Living alone", "With family", ...
+  moneyHabits     String? @db.VarChar(120) // "I track every rupee", ...
+  investing       String? @db.VarChar(120) // "Yes, actively", "Just PF / basic savings", ...
+  organization    String? @db.VarChar(120) // "Pretty on top of things", ...
+  hobbyInterest   String? @db.VarChar(120) // "Reading", "Fitness / wellness", ...
+  reminderStyle   String? @db.VarChar(120) // "Frequent nudges", "One daily summary", ...
+  primaryGoal     String? @db.VarChar(120) // "Get my finances in order", ...
 
   /// Null until onboarding is finished — this is what decides login -> onboarding vs login -> home.
   onboardedAt DateTime?
@@ -31,7 +50,8 @@ model User {
   // --- Account ---
   /// IANA zone name. The morning digest, due-date alerts and SIP reminders all
   /// fire at a wall-clock time, so none of them are correct without this.
-  timezone String @default("Asia/Kolkata")
+  /// The longest real zone name is about 32 characters.
+  timezone String @default("Asia/Kolkata") @db.VarChar(64)
 
   /// Null until the address is confirmed. The column lands ahead of the verify
   /// flow because "who confirmed, and when" cannot be backfilled afterwards.
@@ -45,16 +65,22 @@ model User {
   passwordChangedAt DateTime @default(now())
 
   // --- Preferences ---
-  accent     String  @default("#C64F3B") // hex, one of ACCENTS in seedData.ts
-  theme      String  @default("light") // "light" | "dark"
-  weekStart  String  @default("MON") @db.VarChar(3)
-  prefQuote  Boolean @default(true) // daily resurfaced quote on Today
-  prefDigest Boolean @default(true) // morning digest email
-  prefAlerts Boolean @default(true) // due-date push alerts
-  prefSip    Boolean @default(false) // SIP reminders
+  /// Hex, one of ACCENTS in seedData.ts. Seven characters including the "#".
+  accent     String    @default("#C64F3B") @db.VarChar(7)
+  theme      Theme     @default(light)
+  weekStart  WeekStart @default(MON)
+  prefQuote  Boolean   @default(true) // daily resurfaced quote on Today
+  prefDigest Boolean   @default(true) // morning digest email
+  prefAlerts Boolean   @default(true) // due-date push alerts
+  prefSip    Boolean   @default(false) // SIP reminders
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  /// Closing an account sets this rather than removing the row. A hard delete
+  /// would cascade every todo away with no way back, and "when did they go"
+  /// cannot be reconstructed afterwards. Every lookup in user.repository.ts
+  /// excludes these, so a closed account cannot sign in.
+  deletedAt DateTime?
 
   // --- What this user owns ---
   // One line per domain. Add to this list as each domain lands.

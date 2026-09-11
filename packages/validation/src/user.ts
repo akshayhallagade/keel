@@ -6,7 +6,8 @@ const answer = z.string().trim().min(1).max(120)
 /// preference edits, so callers send only what changed.
 export const updateProfileSchema = z
   .object({
-    name: z.string().trim().min(1),
+    // Matches NAME_MAX in auth.ts and the VarChar(80) on the column.
+    name: z.string().trim().min(1).max(80),
 
     occupation: answer,
     livingSituation: answer,
