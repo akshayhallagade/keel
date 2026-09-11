@@ -336,11 +336,30 @@ describe('PATCH /users/me', () => {
     expect(data).toEqual({ theme: 'dark' })
   })
 
+  // A week does not only start on Monday or Sunday: Saturday is the norm across
+  // much of the Middle East and North Africa. All seven are accepted.
+  it.each(['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'])(
+    'accepts %s as a week start',
+    async (weekStart) => {
+      const res = await call('/users/me', {
+        method: 'PATCH',
+        token: signAccessToken('u1'),
+        body: { weekStart },
+      })
+
+      expect(res.status).toBe(200)
+      const [, data] = vi.mocked(userRepository.update).mock.calls[0]
+      expect(data).toEqual({ weekStart })
+    },
+  )
+
   it.each([
     ['an accent that is not a hex colour', { accent: 'red' }],
     ['an unknown theme', { theme: 'sepia' }],
-    ['an unknown week start', { weekStart: 'WED' }],
+    ['a week start that is not a day', { weekStart: 'FUNDAY' }],
+    ['a lowercase week start', { weekStart: 'wed' }],
     ['an answer past the length cap', { occupation: 'x'.repeat(121) }],
+    ['a name past the length cap', { name: 'x'.repeat(81) }],
   ])('rejects %s with 400', async (_label, patch) => {
     const res = await call('/users/me', {
       method: 'PATCH',

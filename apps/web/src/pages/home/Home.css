@@ -1638,6 +1638,22 @@ body:has(.hs-splash) {
   border-bottom: none;
   justify-content: space-between;
 }
+/* Label above, controls below. Seven day chips do not fit across the rail. */
+.hs-pref-row.is-stacked {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.hs-daypicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.hs-daypicker .hs-chip-flat {
+  flex: 1 1 auto;
+  text-align: center;
+  padding: 6px 7px;
+}
 .hs-danger-actions {
   display: flex;
   gap: 10px;

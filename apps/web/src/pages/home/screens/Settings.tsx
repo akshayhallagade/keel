@@ -1,3 +1,4 @@
+import { WEEK_STARTS } from '@keel/types'
 import { ACCENTS } from '../seedData'
 import type { HomeState } from '../useHomeState'
 import { initialsOf } from '../state/helpers'
@@ -232,16 +233,22 @@ export default function Settings({ vm }: { vm: HomeState }) {
             )
           })}
 
-          <div className="hs-pref-row">
+          {/* Stacked rather than label-beside-chips: seven of them do not fit
+              across a 280px rail. */}
+          <div className="hs-pref-row is-stacked">
             <div style={{ fontSize: 13.5 }}>Week starts on</div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {['MON', 'SUN'].map((name) => (
+            <div
+              className="hs-daypicker"
+              role="group"
+              aria-label="Week starts on"
+            >
+              {WEEK_STARTS.map((day) => (
                 <Chip
-                  key={name}
+                  key={day}
                   flat
-                  label={name}
-                  selected={weekStart === name}
-                  onClick={() => setWeekStart(name)}
+                  label={day}
+                  selected={weekStart === day}
+                  onClick={() => setWeekStart(day)}
                 />
               ))}
             </div>

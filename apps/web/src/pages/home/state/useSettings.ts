@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { User } from '@keel/types'
+import type { Theme, User, WeekStart } from '@keel/types'
 import type { UpdateProfileInput } from '@keel/validation'
 import { updateMe } from '../../../api/users'
 import type { Prefs, Profile } from '../types'
@@ -22,9 +22,7 @@ const SAVE_DEBOUNCE_MS = 600
  */
 export function useSettings(user: User) {
   const [accent, setAccentState] = useState(user.accent)
-  const [mode, setModeState] = useState<'light' | 'dark'>(
-    user.theme === 'dark' ? 'dark' : 'light',
-  )
+  const [mode, setModeState] = useState<Theme>(user.theme)
   const [profile, setProfileState] = useState<Profile>({
     name: user.name,
     email: user.email,
@@ -83,7 +81,7 @@ export function useSettings(user: User) {
   )
 
   const setMode = useCallback(
-    (m: 'light' | 'dark') => {
+    (m: Theme) => {
       setModeState(m)
       queue({ theme: m })
     },
@@ -91,10 +89,9 @@ export function useSettings(user: User) {
   )
 
   const setWeekStart = useCallback(
-    (w: string) => {
+    (w: WeekStart) => {
       setWeekStartState(w)
-      // The column only accepts these two; anything else is a caller bug.
-      if (w === 'MON' || w === 'SUN') queue({ weekStart: w })
+      queue({ weekStart: w })
     },
     [queue],
   )

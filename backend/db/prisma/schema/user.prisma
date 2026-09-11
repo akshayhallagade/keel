@@ -12,8 +12,17 @@ enum Theme {
   dark
 }
 
+/// All seven, not just Monday and Sunday. Monday is ISO-8601 and most of
+/// Europe and Asia; Sunday covers the US, Canada and Japan; Saturday is the
+/// norm across much of the Middle East and North Africa. Restricting the column
+/// to two would decide for people whose week genuinely starts elsewhere.
 enum WeekStart {
   MON
+  TUE
+  WED
+  THU
+  FRI
+  SAT
   SUN
 }
 
