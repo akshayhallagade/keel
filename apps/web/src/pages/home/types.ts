@@ -1,12 +1,17 @@
-export type TodoGroup = 'TODAY' | 'THIS WEEK' | 'SOMEDAY'
+/// Todos come from the API now, so their shape is the shared one rather than a
+/// local copy. `TodoBucket` replaces the old `TodoGroup`: same three lists, but
+/// THIS_WEEK rather than 'THIS WEEK', because it is an enum value on the wire
+/// and not a label. LIST_LABEL below turns it back into something readable.
+export type { Todo, TodoBucket } from '@keel/types'
 
-export interface Todo {
-  text: string
-  tag: string
-  due: string
-  star: boolean
-  group: TodoGroup
-  completing?: boolean
+import type { TodoBucket } from '@keel/types'
+
+export const BUCKETS: TodoBucket[] = ['TODAY', 'THIS_WEEK', 'SOMEDAY']
+
+export const BUCKET_LABEL: Record<TodoBucket, string> = {
+  TODAY: 'TODAY',
+  THIS_WEEK: 'THIS WEEK',
+  SOMEDAY: 'SOMEDAY',
 }
 
 export type RoutinePeriod =
@@ -85,13 +90,20 @@ export type Screen =
   | 'reminders'
   | 'settings'
 
+/// What the todo panel is editing. `id` is null when creating a new one —
+/// which is also how save knows whether to POST or PATCH. It used to be an
+/// index into the todos array, captured when the panel opened, so anything
+/// added or completed in the meantime made it point at the wrong row.
 export interface TodoPanelState {
-  index: number
+  id: string | null
   text: string
-  tag: string
-  due: string
-  star: boolean
-  group?: TodoGroup
+  area: string
+  /// "YYYY-MM-DD" while editing; converted to an instant on save. Empty for
+  /// no date.
+  day: string
+  starred: boolean
+  bucket: TodoBucket
+  /// How many months the calendar has been paged from its starting month.
   calShift?: number
 }
 

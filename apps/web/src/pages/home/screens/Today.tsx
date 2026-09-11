@@ -37,7 +37,7 @@ export default function Today({ vm }: { vm: HomeState }) {
 
   const top3 = starred.slice(0, 3).map((t, i) => mkRow(t, i))
   const showOpenSpot = starred.length < 3
-  const allOpen = todos.filter((t) => !t.star).map((t, i) => mkRow(t, i))
+  const allOpen = todos.filter((t) => !t.starred).map((t, i) => mkRow(t, i))
   const spent = 42180 * countProg
   const spentPct = (56 * countProg).toFixed(1) + '%'
   const investToday = '₹' + (8.4 * countProg).toFixed(1) + 'L'
@@ -53,7 +53,7 @@ export default function Today({ vm }: { vm: HomeState }) {
         <div className="hs-section-label">TOP 3 FOR TODAY</div>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {top3.map((td) => (
-            <TodoRow key={td.text} td={td} />
+            <TodoRow key={td.id} td={td} />
           ))}
           {showOpenSpot && (
             <div className="hs-row" style={{ animation: 'none' }}>
@@ -104,7 +104,7 @@ export default function Today({ vm }: { vm: HomeState }) {
           </button>
         </div>
         {allOpen.map((td) => (
-          <TodoRow key={td.text} td={td} />
+          <TodoRow key={td.id} td={td} />
         ))}
 
         <div className="hs-add-row">

@@ -31,7 +31,7 @@ function WheelColumn({
 export function TodoPanel({ vm }: { vm: HomeState }) {
   const { todoPanel, setTodoPanel, setPanel, savePanel, areaChips, cal } = vm
   if (!todoPanel) return null
-  const isEdit = todoPanel.index >= 0
+  const isEdit = todoPanel.id !== null
   const close = () => setTodoPanel(null)
 
   return (
@@ -106,10 +106,10 @@ export function TodoPanel({ vm }: { vm: HomeState }) {
       <button
         type="button"
         className="hs-star-toggle"
-        aria-pressed={todoPanel.star}
-        onClick={() => setPanel({ star: !todoPanel.star })}
+        aria-pressed={todoPanel.starred}
+        onClick={() => setPanel({ starred: !todoPanel.starred })}
       >
-        <span className="hs-star">{todoPanel.star ? '★' : '☆'}</span>
+        <span className="hs-star">{todoPanel.starred ? '★' : '☆'}</span>
         <span>Mark as Top 3 priority</span>
       </button>
     </Panel>

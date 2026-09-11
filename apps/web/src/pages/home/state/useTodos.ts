@@ -1,85 +1,198 @@
-import { useCallback, useState } from 'react'
-import { DOT_COLORS, SEED_DONE, SEED_TODOS } from '../seedData'
-import type { Todo, TodoGroup, TodoPanelState } from '../types'
-import { fmtDue, isISO, isoOf, monthLong } from './helpers'
+import { useCallback, useEffect, useState } from 'react'
+import type { Todo, TodoBucket } from '@keel/types'
+import { DOT_COLORS } from '../seedData'
+import type { TodoPanelState } from '../types'
+import * as api from '../../../api/todos'
+import {
+  dayToInstant,
+  fmtDueAt,
+  instantToDay,
+  isISO,
+  isoOf,
+  monthLong,
+} from './helpers'
 
 const AREAS = ['FINANCE', 'HOME', 'HEALTH', 'PROJECTS', 'INBOX']
 
-/// How long the completing row is left on screen before it moves to Done.
+/// How long a row stays on screen after being ticked, before it moves to Done.
 /// Matches the opacity transition on .hs-row in Home.css.
 const COMPLETE_MS = 700
 
+/**
+ * Todos, backed by the API.
+ *
+ * Changes are applied locally first and sent in the background, so ticking a
+ * box is instant. If the request fails the local change is rolled back and
+ * `todosError` says so — the alternative is a screen quietly disagreeing with
+ * the server.
+ */
 export function useTodos() {
-  const [todos, setTodos] = useState<Todo[]>(SEED_TODOS)
-  const [done, setDone] = useState(SEED_DONE)
+  const [todos, setTodos] = useState<Todo[]>([])
+  const [loading, setLoading] = useState(true)
+  const [todosError, setTodosError] = useState('')
+
   const [draft, setDraft] = useState('')
   const [filter, setFilter] = useState('ALL')
   const [animFlip, setAnimFlip] = useState(false)
   const [todoPanel, setTodoPanel] = useState<TodoPanelState | null>(null)
 
+  /// Ids mid-tick. Purely visual, and deliberately not on the record: the row
+  /// is fading out locally while the request is in flight.
+  const [completing, setCompleting] = useState<ReadonlySet<string>>(new Set())
+
+  useEffect(() => {
+    let cancelled = false
+    api
+      .listTodos()
+      .then((list) => {
+        if (!cancelled) setTodos(list)
+      })
+      .catch(() => {
+        if (!cancelled) setTodosError('Could not load your todos.')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const fail = useCallback((message: string) => setTodosError(message), [])
+
+  /// Replace one todo in place, by id.
+  const put = useCallback(
+    (updated: Todo) =>
+      setTodos((s) => s.map((t) => (t.id === updated.id ? updated : t))),
+    [],
+  )
+
   const setPanel = useCallback((patch: Partial<TodoPanelState>) => {
     setTodoPanel((s) => (s ? { ...s, ...patch } : s))
   }, [])
 
-  /// Builds what a todo row needs: its data, and what its three buttons do.
-  /// Everything about how it *looks* — the tick, the strikethrough, the fade
-  /// while completing, the hover-revealed star and pencil — belongs to
-  /// TodoRow and Home.css, which is why none of it appears here.
-  const mkRow = useCallback(
-    (t: Todo, idx: number) => {
-      const i = todos.indexOf(t)
-      const isSame = (x: Todo) => x.text === t.text && x.group === t.group
-      return {
-        text: t.text,
-        tag: t.tag,
-        due: fmtDue(t.due),
-        star: !!t.star,
-        completing: !!t.completing,
-        dotColor: DOT_COLORS[t.tag] || 'var(--check-border)',
-        /// Position in its own list, used only to stagger the entrance.
-        index: idx || 0,
-        starToggle: () =>
-          setTodos((s) =>
-            s.map((x) => (isSame(x) ? { ...x, star: !x.star } : x)),
-          ),
-        toggle: () => {
-          if (t.completing) return
-          setTodos((s) =>
-            s.map((x) => (isSame(x) ? { ...x, completing: true } : x)),
-          )
-          // A timer rather than onTransitionEnd: the row unmounts as part of
-          // this, and a transition that never fires (reduced motion, a hidden
-          // tab) would strand the todo mid-completion.
-          setTimeout(() => {
-            setTodos((s) => s.filter((x) => !isSame(x)))
-            setDone((s) => [{ text: t.text }, ...s])
-          }, COMPLETE_MS)
-        },
-        edit: () =>
-          setTodoPanel({
-            index: i,
-            text: t.text,
-            tag: t.tag,
-            due: t.due || '',
-            star: !!t.star,
-            group: t.group,
-          }),
-      }
-    },
-    [todos],
+  // --- Mutations -----------------------------------------------------------
+
+  const add = useCallback(
+    (input: { text: string; area?: string; bucket?: TodoBucket }) =>
+      api
+        .createTodo({
+          text: input.text,
+          area: input.area ?? 'INBOX',
+          bucket: input.bucket ?? 'TODAY',
+          starred: false,
+        })
+        // Newest first, matching the server's ordering.
+        .then((created) => setTodos((s) => [created, ...s]))
+        .catch(() => fail('Could not add that todo.')),
+    [fail],
   )
 
-  const todayList = todos.filter((t) => t.group === 'TODAY')
-  const weekList = todos.filter((t) => t.group === 'THIS WEEK')
-  const somedayList = todos.filter((t) => t.group === 'SOMEDAY')
-  const starred = todos.filter((t) => t.star)
+  const toggleStar = useCallback(
+    (todo: Todo) => {
+      const next = { ...todo, starred: !todo.starred }
+      put(next)
+      api
+        .updateTodo(todo.id, { starred: next.starred })
+        .then(put)
+        .catch(() => {
+          put(todo)
+          fail('Could not update that todo.')
+        })
+    },
+    [put, fail],
+  )
 
-  // --- Due-date calendar shown inside the todo panel ---
+  const complete = useCallback(
+    (todo: Todo) => {
+      if (completing.has(todo.id)) return
+      setCompleting((s) => new Set(s).add(todo.id))
+
+      const stopAnimating = () =>
+        setCompleting((s) => {
+          const next = new Set(s)
+          next.delete(todo.id)
+          return next
+        })
+
+      api
+        .updateTodo(todo.id, { completed: true })
+        .then((updated) => {
+          // Let the row finish fading before it moves to the Done list.
+          setTimeout(() => {
+            put(updated)
+            stopAnimating()
+          }, COMPLETE_MS)
+        })
+        .catch(() => {
+          stopAnimating()
+          fail('Could not complete that todo.')
+        })
+    },
+    [completing, put, fail],
+  )
+
+  const remove = useCallback(
+    (todo: Todo) => {
+      setTodos((s) => s.filter((t) => t.id !== todo.id))
+      api.deleteTodo(todo.id).catch(() => {
+        setTodos((s) => [todo, ...s])
+        fail('Could not delete that todo.')
+      })
+    },
+    [fail],
+  )
+
+  // --- Row model -----------------------------------------------------------
+
+  /// What a todo row needs: its data, and what its three buttons do. Nothing
+  /// about how it looks — TodoRow and Home.css own that.
+  const mkRow = useCallback(
+    (t: Todo, idx: number) => ({
+      id: t.id,
+      text: t.text,
+      tag: t.area,
+      due: fmtDueAt(t.dueAt),
+      star: t.starred,
+      completing: completing.has(t.id),
+      dotColor: DOT_COLORS[t.area] || 'var(--check-border)',
+      /// Position in its own list, used only to stagger the entrance.
+      index: idx || 0,
+      starToggle: () => toggleStar(t),
+      toggle: () => complete(t),
+      edit: () =>
+        setTodoPanel({
+          id: t.id,
+          text: t.text,
+          area: t.area,
+          day: t.dueAt ? instantToDay(t.dueAt) : '',
+          starred: t.starred,
+          bucket: t.bucket,
+        }),
+    }),
+    [completing, toggleStar, complete],
+  )
+
+  // --- Derived lists -------------------------------------------------------
+
+  const open = todos.filter((t) => !t.completedAt)
+  const done = todos.filter((t) => t.completedAt)
+
+  const inBucket = (bucket: TodoBucket) =>
+    open.filter((t) => t.bucket === bucket)
+
+  const todayList = inBucket('TODAY')
+  const weekList = inBucket('THIS_WEEK')
+  const somedayList = inBucket('SOMEDAY')
+  const starred = open.filter((t) => t.starred)
+
+  // --- Due-date calendar, shown inside the todo panel ----------------------
+
   const now = new Date()
   const todayISO = isoOf(now.getFullYear(), now.getMonth(), now.getDate())
   const base =
-    todoPanel && isISO(todoPanel.due)
-      ? { y: +todoPanel.due.slice(0, 4), m: +todoPanel.due.slice(5, 7) - 1 }
+    todoPanel && isISO(todoPanel.day)
+      ? { y: +todoPanel.day.slice(0, 4), m: +todoPanel.day.slice(5, 7) - 1 }
       : { y: now.getFullYear(), m: now.getMonth() }
 
   const calShift = (todoPanel && todoPanel.calShift) || 0
@@ -103,9 +216,9 @@ export function useTodos() {
     const iso = isoOf(dY, dMo, d)
     calCells.push({
       day: String(d),
-      selected: !!todoPanel && todoPanel.due === iso,
+      selected: !!todoPanel && todoPanel.day === iso,
       isToday: iso === todayISO,
-      pick: () => setPanel({ due: iso }),
+      pick: () => setPanel({ day: iso }),
     })
   }
 
@@ -118,38 +231,53 @@ export function useTodos() {
 
   const areaChips = AREAS.map((name) => ({
     name,
-    selected: !!todoPanel && todoPanel.tag === name,
-    pick: () => setPanel({ tag: name }),
+    selected: !!todoPanel && todoPanel.area === name,
+    pick: () => setPanel({ area: name }),
   }))
+
+  // --- Panel ---------------------------------------------------------------
 
   const savePanel = () => {
     if (!todoPanel || !todoPanel.text.trim()) return
-    const item: Todo = {
-      text: todoPanel.text.trim(),
-      tag: todoPanel.tag,
-      due: todoPanel.due.trim() || 'DUE TODAY',
-      star: todoPanel.star,
-      group: todoPanel.group || 'TODAY',
-    }
-    setTodos((s) =>
-      todoPanel.index >= 0
-        ? s.map((t, j) => (j === todoPanel.index ? item : t))
-        : [item, ...s],
-    )
+    const panel = todoPanel
     setTodoPanel(null)
+
+    const fields = {
+      text: panel.text.trim(),
+      area: panel.area,
+      bucket: panel.bucket,
+      starred: panel.starred,
+      dueAt: panel.day ? dayToInstant(panel.day) : null,
+    }
+
+    // An id means it already exists. No id means it is new — the old code used
+    // an array index for this, which drifted whenever the list changed.
+    if (panel.id) {
+      api
+        .updateTodo(panel.id, fields)
+        .then(put)
+        .catch(() => fail('Could not save that todo.'))
+    } else {
+      api
+        .createTodo(fields)
+        .then((created) => setTodos((s) => [created, ...s]))
+        .catch(() => fail('Could not add that todo.'))
+    }
   }
 
   const openCreateTodo = () => {
     setTodoPanel({
-      index: -1,
+      id: null,
       text: draft.trim(),
-      tag: 'INBOX',
-      due: '',
-      star: false,
-      group: 'TODAY',
+      area: 'INBOX',
+      day: '',
+      starred: false,
+      bucket: 'TODAY',
     })
     setDraft('')
   }
+
+  // --- Quick-add box -------------------------------------------------------
 
   const onDraftChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setDraft(e.target.value)
@@ -159,22 +287,24 @@ export function useTodos() {
     if (e.key !== 'Enter') return
     let text = draft.trim()
     if (!text) return
-    let tag = 'INBOX'
+
+    let area = 'INBOX'
     const m = text.match(/#(\w+)\s*$/)
     if (m) {
-      tag = m[1].toUpperCase()
+      area = m[1].toUpperCase()
       text = text.slice(0, m.index).trim()
     }
-    setTodos((s) => [
-      { text, tag, due: 'DUE TODAY', star: false, group: 'TODAY' as TodoGroup },
-      ...s,
-    ])
+    if (!text) return
+
+    add({ text, area })
     setDraft('')
   }
 
   return {
-    todos,
+    todos: open,
     done,
+    todosLoading: loading,
+    todosError,
     draft,
     onDraftChange,
     onDraftKey,
@@ -194,5 +324,6 @@ export function useTodos() {
     cal,
     areaChips,
     openCreateTodo,
+    removeTodo: remove,
   }
 }

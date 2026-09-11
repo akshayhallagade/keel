@@ -1564,6 +1564,13 @@ body:has(.hs-splash) {
   left: 16px;
 }
 
+/* Placeholder line for a list that is loading, empty, or failed. */
+.hs-empty {
+  font-size: 13.5px;
+  color: var(--muted);
+  padding: 22px 0;
+}
+
 /* ---------- Settings ---------- */
 .hs-save-error {
   font: 500 11px var(--mono);

@@ -137,11 +137,11 @@ The columns exist and `PATCH /users/me` exists. The screen never calls it.
 The first real domain. It is the worked example of every rule above; the other
 screens follow its shape.
 
-- [ ] `Todo` table: id, userId, real `dueAt`, timestamps, soft delete
-- [ ] Repository, service, controller, routes
-- [ ] Validation schemas in `@keel/validation`
-- [ ] Tests covering ownership and the date handling
-- [ ] Frontend talks to the API instead of holding sample data
+- [x] `Todo` table: id, userId, real `dueAt`, timestamps, soft delete
+- [x] Repository, service, controller, routes
+- [x] Validation schemas in `@keel/validation`
+- [x] Tests covering ownership and the date handling
+- [x] Frontend talks to the API instead of holding sample data
 
 ### Later — the rest
 

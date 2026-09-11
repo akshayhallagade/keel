@@ -30,8 +30,9 @@ function Group({
       >
         {label} · {items.length}
       </div>
+      {/* Keyed by id, not text. Two todos with the same words are two todos. */}
       {items.map((t, i) => (
-        <TodoRow key={t.text} td={mkRow(t, i)} topRuled />
+        <TodoRow key={t.id} td={mkRow(t, i)} topRuled />
       ))}
     </>
   )
@@ -51,9 +52,11 @@ export default function Todos({ vm }: { vm: HomeState }) {
     onDraftKey,
     openCreateTodo,
     todos,
+    todosLoading,
+    todosError,
   } = vm
 
-  const doneCount = 2 + done.length
+  const doneCount = done.length
   const groups = [
     { label: 'TODAY', items: todayList },
     { label: 'THIS WEEK', items: weekList },
@@ -84,15 +87,33 @@ export default function Todos({ vm }: { vm: HomeState }) {
           ))}
         </div>
 
-        {groups.map((g, i) => (
-          <Group
-            key={g.label}
-            label={g.label}
-            items={g.items}
-            mkRow={mkRow}
-            first={i === 0}
-          />
-        ))}
+        {todosError && (
+          <div role="alert" className="hs-save-error">
+            {todosError}
+          </div>
+        )}
+
+        {todosLoading ? (
+          <div className="hs-empty">Loading your todos…</div>
+        ) : (
+          groups.map((g, i) => (
+            <Group
+              key={g.label}
+              label={g.label}
+              items={g.items}
+              mkRow={mkRow}
+              first={i === 0}
+            />
+          ))
+        )}
+
+        {/* A brand-new account has nothing at all. Without this the screen is
+            three empty headings and a box, which reads as broken. */}
+        {!todosLoading && !todosError && todos.length === 0 && (
+          <div className="hs-empty">
+            Nothing yet. Add your first todo below.
+          </div>
+        )}
 
         <div className="hs-add-row">
           <div className="hs-add-plus">+</div>

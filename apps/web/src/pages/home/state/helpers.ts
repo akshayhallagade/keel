@@ -33,6 +33,34 @@ export const pad2 = (n: number) => String(n).padStart(2, '0')
 export const isoOf = (y: number, m: number, d: number) =>
   `${y}-${pad2(m + 1)}-${pad2(d)}`
 
+/* ---------------------------------------------------------------------------
+ * Days versus instants.
+ *
+ * The calendar in the todo panel picks a *day* ("the 9th"). The API stores an
+ * *instant* ("2026-03-09T00:00:00+05:30"). These two convert between them.
+ *
+ * Local midnight is the anchor, not UTC midnight: someone in Kolkata picking
+ * the 9th means their 9th. Anchoring to UTC would store 2026-03-09T00:00Z,
+ * which is 5:30am on the 9th for them — still fine — but for anyone west of
+ * UTC it reads back as the 8th.
+ * ------------------------------------------------------------------------ */
+
+/// "2026-03-09" → the ISO instant of local midnight that day.
+export const dayToInstant = (day: string) => {
+  const [y, m, d] = day.split('-').map(Number)
+  return new Date(y, m - 1, d).toISOString()
+}
+
+/// An ISO instant → the "YYYY-MM-DD" day it falls on, in local time.
+export const instantToDay = (iso: string) => {
+  const d = new Date(iso)
+  return isoOf(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+/// What a due date reads as on a row: "9 MAR", or nothing when there is none.
+export const fmtDueAt = (iso: string | null) =>
+  iso ? fmtDue(instantToDay(iso)) : ''
+
 export const rMM = (idx: number) => pad2(R_MINS[idx])
 
 export const parseRTime = (str: string) => {
