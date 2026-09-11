@@ -13,8 +13,15 @@ try {
 }
 
 export default defineConfig({
-  schema: 'prisma/schema.prisma',
+  // A folder, not a file: Prisma reads every .prisma inside it. Models are
+  // split one file per domain so this stays navigable as the table count grows.
+  schema: 'prisma/schema',
   migrations: {
+    // Must be stated now that `schema` is a folder: Prisma otherwise resolves
+    // migrations relative to the schema path and looks in prisma/schema/
+    // migrations, finds nothing, and would happily start a fresh baseline
+    // alongside two that are already applied.
+    path: 'prisma/migrations',
     seed: 'tsx src/seed.ts',
   },
   engine: 'classic',
