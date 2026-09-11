@@ -400,10 +400,14 @@ export default function Login({ onAuthenticated }: LoginProps) {
     })
   }
 
+  /// Password reset is not built — there is no endpoint and nothing that sends
+  /// email. This used to answer "Password reset link sent — check your inbox",
+  /// which sent nobody anything and left them waiting for a mail that was never
+  /// coming. Saying so is worse than useless; saying nothing is at least true.
   const forgot = () =>
     setError({
       field: '',
-      message: 'Password reset link sent — check your inbox.',
+      message: 'Password reset isn’t available yet. Contact support for help.',
     })
 
   const handleSubmit = () => {
@@ -461,7 +465,7 @@ export default function Login({ onAuthenticated }: LoginProps) {
       setDots('.'.repeat(n))
     }, 300)
     const request = isReturning
-      ? loginRequest({ email: email.trim(), password })
+      ? loginRequest({ email: email.trim(), password }, remember)
       : signup({ email: email.trim(), password, name: name.trim() })
 
     request
