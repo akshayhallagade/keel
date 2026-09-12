@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 
 /**
  * The slide-in panel shell: dimmed overlay, title bar with a close ✕, body, and
@@ -20,6 +20,16 @@ export default function Panel({
   onClose: () => void
   children: ReactNode
 }) {
+  /// Esc closes. Here rather than in each panel, so all five get it — and any
+  /// panel added later gets it without anyone remembering to wire it up.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
   return (
     <>
       <button

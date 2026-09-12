@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest'
 
-import { dayToInstant, groupFor, startOfWeek } from './helpers'
+import {
+  dayTimeToInstant,
+  dayToInstant,
+  fmtDueAt,
+  groupFor,
+  instantHasTime,
+  instantToDay,
+  instantToTime,
+  isToday,
+  overdueDays,
+  startOfWeek,
+} from './helpers'
 
 /// A Wednesday, so there are days on both sides of it inside any week.
 const WEDNESDAY = new Date(2026, 2, 11, 14, 30) // 11 March 2026, 2:30pm local
@@ -119,5 +130,88 @@ describe('startOfWeek', () => {
     const start = startOfWeek(WEDNESDAY, 'MON')
     expect(start.getHours()).toBe(0)
     expect(start.getMinutes()).toBe(0)
+  })
+})
+
+describe('overdueDays', () => {
+  it('is 0 for a todo that is not late', () => {
+    expect(overdueDays(day(2026, 3, 11), WEDNESDAY)).toBe(0) // today
+    expect(overdueDays(day(2026, 3, 12), WEDNESDAY)).toBe(0) // tomorrow
+    expect(overdueDays(null, WEDNESDAY)).toBe(0) // no date at all
+  })
+
+  it('counts whole days late', () => {
+    expect(overdueDays(day(2026, 3, 10), WEDNESDAY)).toBe(1)
+    expect(overdueDays(day(2026, 3, 4), WEDNESDAY)).toBe(7)
+  })
+
+  // Otherwise the label creeps up during the day: "1D" in the morning and "2D"
+  // by the evening, for a todo nobody touched.
+  it('does not change as the day goes on', () => {
+    const due = day(2026, 3, 10)
+    const morning = new Date(2026, 2, 11, 6, 0)
+    const midnightish = new Date(2026, 2, 11, 23, 59)
+
+    expect(overdueDays(due, morning)).toBe(1)
+    expect(overdueDays(due, midnightish)).toBe(1)
+  })
+
+  // A todo due at 11pm yesterday is one day late, not two, even though the gap
+  // in hours is under 24.
+  it('counts days, not 24-hour blocks', () => {
+    const lateYesterday = new Date(2026, 2, 10, 23, 0).toISOString()
+    const earlyToday = new Date(2026, 2, 11, 1, 0)
+    expect(overdueDays(lateYesterday, earlyToday)).toBe(1)
+  })
+
+  it('ignores an unparseable date', () => {
+    expect(overdueDays('not a date', WEDNESDAY)).toBe(0)
+  })
+})
+
+describe('due dates that carry a time', () => {
+  it('treats local midnight as "no time given"', () => {
+    // This is exactly what the calendar writes when you pick a day only.
+    expect(instantHasTime(day(2026, 3, 11))).toBe(false)
+    expect(fmtDueAt(day(2026, 3, 11))).toBe('11 MAR')
+    expect(instantToTime(day(2026, 3, 11))).toBe('')
+  })
+
+  it('shows the time when there is one', () => {
+    const at1730 = dayTimeToInstant('2026-03-11', '17:30')
+    expect(instantHasTime(at1730)).toBe(true)
+    expect(fmtDueAt(at1730)).toBe('11 MAR · 5:30PM')
+    expect(instantToTime(at1730)).toBe('17:30')
+  })
+
+  it('survives a round trip through the time field', () => {
+    const stored = dayTimeToInstant('2026-03-11', '09:05')
+    expect(instantToDay(stored)).toBe('2026-03-11')
+    expect(instantToTime(stored)).toBe('09:05')
+  })
+
+  it('says nothing at all when there is no date', () => {
+    expect(fmtDueAt(null)).toBe('')
+  })
+
+  // A due time must not shunt a todo into the next day's list.
+  it('keeps a late-evening todo in Today', () => {
+    const at2330 = dayTimeToInstant('2026-03-11', '23:30')
+    expect(groupFor(at2330, 'MON', WEDNESDAY)).toBe('TODAY')
+  })
+})
+
+describe('isToday', () => {
+  it('is true only for an instant falling on today', () => {
+    expect(isToday(day(2026, 3, 11), WEDNESDAY)).toBe(true)
+    expect(isToday(day(2026, 3, 10), WEDNESDAY)).toBe(false)
+    expect(isToday(null, WEDNESDAY)).toBe(false)
+  })
+
+  it('covers the whole day, not the last 24 hours', () => {
+    const justAfterMidnight = new Date(2026, 2, 11, 0, 1).toISOString()
+    const lateEvening = new Date(2026, 2, 11, 23, 59).toISOString()
+    expect(isToday(justAfterMidnight, WEDNESDAY)).toBe(true)
+    expect(isToday(lateEvening, WEDNESDAY)).toBe(true)
   })
 })

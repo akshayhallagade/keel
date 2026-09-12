@@ -92,6 +92,9 @@ export interface TodoPanelState {
   /// "YYYY-MM-DD" while editing; converted to an instant on save. Empty for
   /// no date.
   day: string
+  /// "HH:MM" while editing, as <input type="time"> gives it. Empty means the
+  /// todo is due that day but at no particular time.
+  time: string
   starred: boolean
   /// How many months the calendar has been paged from its starting month.
   calShift?: number

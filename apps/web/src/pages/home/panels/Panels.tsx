@@ -103,6 +103,19 @@ export function TodoPanel({ vm }: { vm: HomeState }) {
           </div>
         </div>
       </div>
+      <div className="hs-panel-field">
+        <div className="hs-field-label">TIME</div>
+        {/* The native picker, not a custom one: it already knows the user's
+            12/24-hour preference and works from the keyboard. Blank means the
+            todo is due that day at no particular time. */}
+        <input
+          type="time"
+          className="hs-field-input"
+          value={todoPanel.time}
+          disabled={!todoPanel.day}
+          onChange={(e) => setPanel({ time: e.target.value })}
+        />
+      </div>
       <button
         type="button"
         className="hs-star-toggle"

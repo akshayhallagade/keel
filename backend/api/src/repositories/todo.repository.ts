@@ -67,4 +67,16 @@ export const todoRepository = {
     })
     return count > 0
   },
+
+  /// The one deliberate exception to "soft-deleted rows are invisible": undo.
+  /// It looks for a row that *is* deleted, so restoring something already live
+  /// matches nothing and returns null rather than silently succeeding.
+  restore: async (userId: string, id: string) => {
+    const { count } = await prisma.todo.updateMany({
+      where: { id, userId, deletedAt: { not: null } },
+      data: { deletedAt: null },
+    })
+    if (count === 0) return null
+    return prisma.todo.findUnique({ where: { id } })
+  },
 }

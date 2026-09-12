@@ -191,6 +191,36 @@ export const DOT_COLORS: Record<string, string> = {
   INBOX: 'var(--check-border)',
 }
 
+/// The palette an unnamed area gets picked from.
+const AREA_FALLBACKS = [
+  'var(--accent)',
+  'var(--positive)',
+  'var(--warn)',
+  'var(--info)',
+]
+
+/**
+ * The dot colour for an area.
+ *
+ * Typing "#garden" in the quick-add box makes a GARDEN area, which DOT_COLORS
+ * has never heard of. That used to come out the same grey as INBOX, so every
+ * area the user invented looked identical and looked broken.
+ *
+ * The name is hashed to pick a colour instead, so GARDEN is always the same
+ * colour on every screen and after every reload, without anyone maintaining a
+ * list. Two areas can collide on a colour; the dot is a hint next to the name,
+ * not the thing that identifies it.
+ */
+export const areaColor = (area: string) => {
+  const known = DOT_COLORS[area]
+  if (known) return known
+
+  let hash = 0
+  for (let i = 0; i < area.length; i++)
+    hash = (hash * 31 + area.charCodeAt(i)) | 0
+  return AREA_FALLBACKS[Math.abs(hash) % AREA_FALLBACKS.length]
+}
+
 export const SPEND_DOTS: Record<string, string> = {
   GROCERIES: 'var(--positive)',
   'EATING OUT': 'var(--warn)',

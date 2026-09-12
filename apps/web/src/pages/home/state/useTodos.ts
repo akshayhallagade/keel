@@ -1,22 +1,31 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Todo, WeekStart } from '@keel/types'
-import { DOT_COLORS } from '../seedData'
+import { areaColor } from '../seedData'
 import type { TodoPanelState } from '../types'
 import * as api from '../../../api/todos'
 import { ApiError } from '../../../api/client'
+import { parseQuickAdd } from './parseQuickAdd'
 import {
+  dayTimeToInstant,
   dayToInstant,
   groupFor,
   type TodoGroup,
   fmtDueAt,
   instantToDay,
+  instantToTime,
   isISO,
   isoOf,
+  isToday,
   monthLong,
+  overdueDays,
   todayDay,
 } from './helpers'
 
 const AREAS = ['FINANCE', 'HOME', 'HEALTH', 'PROJECTS', 'INBOX']
+
+/// How long the "deleted — undo" bar stays up. Long enough to notice and reach,
+/// short enough that it is gone before it becomes clutter.
+const UNDO_MS = 8000
 
 /// How long a row stays on screen after being ticked, before it moves to Done.
 /// Matches the opacity transition on .hs-row in Home.css.
@@ -39,9 +48,14 @@ export function useTodos(weekStart: WeekStart) {
   const [todosError, setTodosError] = useState('')
 
   const [draft, setDraft] = useState('')
+  const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('ALL')
   const [animFlip, setAnimFlip] = useState(false)
   const [todoPanel, setTodoPanel] = useState<TodoPanelState | null>(null)
+
+  /// The todo the undo bar is currently offering to bring back, if any.
+  const [undoable, setUndoable] = useState<Todo | null>(null)
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   /// Ids mid-tick. Purely visual, and deliberately not on the record: the row
   /// is fading out locally while the request is in flight.
@@ -81,15 +95,16 @@ export function useTodos(weekStart: WeekStart) {
   // --- Mutations -----------------------------------------------------------
 
   /// Typing into the quick-add box means "today" — that is what the box is
-  /// for — so it gets today's date. Without one it would have no due date and
-  /// land in Someday, which is not what anyone typing into a todo list means.
+  /// for — so anything the text did not date itself gets today's date. Without
+  /// one it would have no due date and land in Someday, which is not what
+  /// anyone typing into a todo list means.
   const add = useCallback(
-    (input: { text: string; area?: string }) =>
+    (input: { text: string; area: string; dueAt: string | null }) =>
       api
         .createTodo({
           text: input.text,
-          area: input.area ?? 'INBOX',
-          dueAt: dayToInstant(todayDay()),
+          area: input.area,
+          dueAt: input.dueAt ?? dayToInstant(todayDay()),
           starred: false,
         })
         // Newest first, matching the server's ordering.
@@ -149,15 +164,67 @@ export function useTodos(weekStart: WeekStart) {
     [completing, put, fail],
   )
 
+  /// Un-ticking something from the Done tab. No fade — it is going back to a
+  /// list the user is not looking at, so there is nothing to watch leave.
+  const uncomplete = useCallback(
+    (todo: Todo) => {
+      put({ ...todo, completedAt: null })
+      api
+        .updateTodo(todo.id, { completed: false })
+        .then(put)
+        .catch(() => {
+          put(todo)
+          fail('Could not reopen that todo.')
+        })
+    },
+    [put, fail],
+  )
+
+  /// Deleting is soft on the server — the row keeps existing with `deletedAt`
+  /// set — so for UNDO_MS we offer it back rather than making the user retype
+  /// something they deleted by accident.
   const remove = useCallback(
     (todo: Todo) => {
       setTodos((s) => s.filter((t) => t.id !== todo.id))
-      api.deleteTodo(todo.id).catch(() => {
-        setTodos((s) => [todo, ...s])
-        fail('Could not delete that todo.')
-      })
+
+      api
+        .deleteTodo(todo.id)
+        .then(() => {
+          if (undoTimer.current) clearTimeout(undoTimer.current)
+          setUndoable(todo)
+          undoTimer.current = setTimeout(() => setUndoable(null), UNDO_MS)
+        })
+        .catch(() => {
+          // It is still on the server, so put it back on screen.
+          setTodos((s) => [todo, ...s])
+          fail('Could not delete that todo.')
+        })
     },
     [fail],
+  )
+
+  const undoDelete = useCallback(() => {
+    const todo = undoable
+    if (!todo) return
+
+    setUndoable(null)
+    if (undoTimer.current) clearTimeout(undoTimer.current)
+
+    api
+      .restoreTodo(todo.id)
+      // The server hands back the real row, which may have moved on since we
+      // last saw it — use that rather than the copy we were holding.
+      .then((restored) => setTodos((s) => [restored, ...s]))
+      .catch(() => fail('Could not bring that todo back.'))
+  }, [undoable, fail])
+
+  /// A pending timer outlives the screen otherwise, and fires setState on a
+  /// hook that is gone.
+  useEffect(
+    () => () => {
+      if (undoTimer.current) clearTimeout(undoTimer.current)
+    },
+    [],
   )
 
   // --- Row model -----------------------------------------------------------
@@ -165,46 +232,93 @@ export function useTodos(weekStart: WeekStart) {
   /// What a todo row needs: its data, and what its three buttons do. Nothing
   /// about how it looks — TodoRow and Home.css own that.
   const mkRow = useCallback(
-    (t: Todo, idx: number) => ({
-      id: t.id,
-      text: t.text,
-      tag: t.area,
-      due: fmtDueAt(t.dueAt),
-      star: t.starred,
-      completing: completing.has(t.id),
-      dotColor: DOT_COLORS[t.area] || 'var(--check-border)',
-      /// Position in its own list, used only to stagger the entrance.
-      index: idx || 0,
-      starToggle: () => toggleStar(t),
-      toggle: () => complete(t),
-      edit: () =>
-        setTodoPanel({
-          id: t.id,
-          text: t.text,
-          area: t.area,
-          day: t.dueAt ? instantToDay(t.dueAt) : '',
-          starred: t.starred,
-        }),
-    }),
-    [completing, toggleStar, complete],
+    (t: Todo, idx: number) => {
+      const late = overdueDays(t.dueAt)
+      return {
+        id: t.id,
+        text: t.text,
+        tag: t.area,
+        due: fmtDueAt(t.dueAt),
+        /// Days late, 0 when it is not. The row draws the date in the warning
+        /// colour and adds "OVERDUE 3D" when this is set — `groupFor` already
+        /// keeps overdue todos in Today, but nothing said they were late.
+        overdue: late,
+        overdueLabel: late ? `OVERDUE ${late}D` : '',
+        star: t.starred,
+        done: !!t.completedAt,
+        completing: completing.has(t.id),
+        dotColor: areaColor(t.area),
+        /// Position in its own list, used only to stagger the entrance.
+        index: idx || 0,
+        starToggle: () => toggleStar(t),
+        toggle: () => (t.completedAt ? uncomplete(t) : complete(t)),
+        remove: () => remove(t),
+        edit: () =>
+          setTodoPanel({
+            id: t.id,
+            text: t.text,
+            area: t.area,
+            day: t.dueAt ? instantToDay(t.dueAt) : '',
+            time: t.dueAt ? instantToTime(t.dueAt) : '',
+            starred: t.starred,
+          }),
+      }
+    },
+    [completing, toggleStar, complete, uncomplete, remove],
   )
 
   // --- Derived lists -------------------------------------------------------
 
   const open = todos.filter((t) => !t.completedAt)
-  const done = todos.filter((t) => t.completedAt)
+  const starred = open.filter((t) => t.starred)
+
+  /**
+   * Search narrows the lists on the Todos screen only.
+   *
+   * This hook is shared — the Today screen reads `todos` and `starred` from the
+   * same place — so filtering everything here would mean typing in the Todos
+   * search box silently emptied Today's Top 3. The counts and the rail stay
+   * whole for the same reason: they are facts about your todos, not about your
+   * search.
+   */
+  const needle = query.trim().toLowerCase()
+  const matches = (t: Todo) =>
+    !needle ||
+    t.text.toLowerCase().includes(needle) ||
+    t.area.toLowerCase().includes(needle)
+
+  /// Most recently finished first — the opposite of the open lists, because
+  /// "what did I just do" is the question the Done tab answers.
+  const done = todos
+    .filter((t) => t.completedAt && matches(t))
+    .sort((a, b) => (a.completedAt! < b.completedAt! ? 1 : -1))
+
+  /// The rail says DONE TODAY, so it has to mean today. It used to be every
+  /// todo ever completed, which was a number that only ever went up.
+  const doneToday = todos.filter((t) => t.completedAt && isToday(t.completedAt))
 
   /// Worked out from the due date every render, against the clock and the
   /// user's chosen first day of the week — never read off the record. This is
   /// what stops a todo added on Monday still claiming to be "today" on
   /// Wednesday.
   const inGroup = (group: TodoGroup) =>
-    open.filter((t) => groupFor(t.dueAt, weekStart) === group)
+    open.filter((t) => matches(t) && groupFor(t.dueAt, weekStart) === group)
 
   const todayList = inGroup('TODAY')
   const weekList = inGroup('THIS_WEEK')
   const somedayList = inGroup('SOMEDAY')
-  const starred = open.filter((t) => t.starred)
+
+  /// The real "BY AREA" list. This panel used to be four hardcoded rows with
+  /// invented counts that never moved, whatever you added or ticked off.
+  /// Busiest first, so the rail answers "where is the work piling up?".
+  const areaCounts = Object.entries(
+    open.reduce<Record<string, number>>((acc, t) => {
+      acc[t.area] = (acc[t.area] ?? 0) + 1
+      return acc
+    }, {}),
+  )
+    .map(([name, count]) => ({ name, count, color: areaColor(name) }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 
   // --- Due-date calendar, shown inside the todo panel ----------------------
 
@@ -266,7 +380,9 @@ export function useTodos(weekStart: WeekStart) {
       text: panel.text.trim(),
       area: panel.area,
       starred: panel.starred,
-      dueAt: panel.day ? dayToInstant(panel.day) : null,
+      // A time with no day has nothing to attach to, so the day is what decides
+      // whether there is a due date at all.
+      dueAt: panel.day ? dayTimeToInstant(panel.day, panel.time) : null,
     }
 
     // An id means it already exists. No id means it is new — the old code used
@@ -284,12 +400,16 @@ export function useTodos(weekStart: WeekStart) {
     }
   }
 
+  /// Opening the full panel carries over whatever was already typed, dates and
+  /// all, so pressing + DETAILS never costs you what you had written.
   const openCreateTodo = () => {
+    const parsed = parseQuickAdd(draft)
     setTodoPanel({
       id: null,
-      text: draft.trim(),
-      area: 'INBOX',
-      day: todayDay(),
+      text: parsed.text,
+      area: parsed.area,
+      day: parsed.dueAt ? instantToDay(parsed.dueAt) : todayDay(),
+      time: parsed.dueAt ? instantToTime(parsed.dueAt) : '',
       starred: false,
     })
     setDraft('')
@@ -300,32 +420,33 @@ export function useTodos(weekStart: WeekStart) {
   const onDraftChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setDraft(e.target.value)
 
-  /// Enter adds straight from the box. A trailing "#tag" becomes the area.
+  /// Enter adds straight from the box. The date, time and #area are read out of
+  /// what was typed — see parseQuickAdd.
   const onDraftKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== 'Enter') return
-    let text = draft.trim()
-    if (!text) return
 
-    let area = 'INBOX'
-    const m = text.match(/#(\w+)\s*$/)
-    if (m) {
-      area = m[1].toUpperCase()
-      text = text.slice(0, m.index).trim()
-    }
-    if (!text) return
+    const parsed = parseQuickAdd(draft)
+    // "tomorrow" on its own is a date with nothing to do on it.
+    if (!parsed.text) return
 
-    add({ text, area })
+    add(parsed)
     setDraft('')
   }
 
   return {
     todos: open,
     done,
+    doneToday,
+    areaCounts,
     todosLoading: loading,
     todosError,
     draft,
     onDraftChange,
     onDraftKey,
+    query,
+    setQuery,
+    undoable,
+    undoDelete,
     filter,
     setFilter,
     animFlip,

@@ -70,4 +70,19 @@ export const todoService = {
     const deleted = await todoRepository.softDelete(userId, id)
     if (!deleted) throw new NotFoundError('Todo not found')
   },
+
+  /**
+   * Undo a delete.
+   *
+   * This is only possible because deleting sets `deletedAt` instead of removing
+   * the row — the todo never went anywhere, it just stopped being visible.
+   *
+   * A restored todo keeps its original id, so anything holding onto that id
+   * still points at the right thing.
+   */
+  async restore(userId: string, id: string) {
+    const todo = await todoRepository.restore(userId, id)
+    if (!todo) throw new NotFoundError('Todo not found')
+    return todo
+  },
 }

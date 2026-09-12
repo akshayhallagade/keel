@@ -16,3 +16,8 @@ export const updateTodo = (id: string, input: UpdateTodoInput) =>
 /// The server answers 204 with no body, which apiFetch turns into null.
 export const deleteTodo = (id: string) =>
   apiFetch<null>(`/todos/${id}`, { method: 'DELETE' })
+
+/// Undo a delete. The row was only soft-deleted, so this hands back the same
+/// todo with the same id.
+export const restoreTodo = (id: string) =>
+  apiFetch<Todo>(`/todos/${id}/restore`, { method: 'POST' })

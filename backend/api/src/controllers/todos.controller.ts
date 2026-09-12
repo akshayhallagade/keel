@@ -33,3 +33,8 @@ export const deleteTodo = asyncHandler(async (req, res) => {
   // 204: it worked and there is nothing to say.
   res.status(204).end()
 })
+
+export const restoreTodo = asyncHandler(async (req, res) => {
+  const todo = await todoService.restore(req.userId!, req.params.id)
+  res.status(200).json(toPublicTodo(todo))
+})

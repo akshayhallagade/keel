@@ -391,3 +391,83 @@ describe('DELETE /todos/:id', () => {
     expect(res.status).toBe(404)
   })
 })
+
+describe('POST /todos/:id/restore', () => {
+  const deleteTodo = (token: string, id: string) =>
+    call(`/todos/${id}`, { method: 'DELETE', token })
+
+  it('brings a deleted todo back, with the same id', async () => {
+    const created = await makeTodo(aliceToken, { text: 'Undo me' })
+    await deleteTodo(aliceToken, created.body.id)
+
+    const res = await call(`/todos/${created.body.id}/restore`, {
+      method: 'POST',
+      token: aliceToken,
+    })
+
+    expect(res.status).toBe(200)
+    // Same id, so anything still holding it points at the right todo.
+    expect(res.body.id).toBe(created.body.id)
+    expect(res.body.text).toBe('Undo me')
+
+    const list = await call('/todos', { token: aliceToken })
+    expect(list.body).toHaveLength(1)
+  })
+
+  it('keeps everything the todo had before it was deleted', async () => {
+    const created = await makeTodo(aliceToken, {
+      area: 'HOME',
+      dueAt: '2026-03-09T18:30:00.000Z',
+      starred: true,
+    })
+    await deleteTodo(aliceToken, created.body.id)
+
+    const res = await call(`/todos/${created.body.id}/restore`, {
+      method: 'POST',
+      token: aliceToken,
+    })
+
+    expect(res.body.area).toBe('HOME')
+    expect(res.body.dueAt).toBe('2026-03-09T18:30:00.000Z')
+    expect(res.body.starred).toBe(true)
+  })
+
+  it('will not let one user restore another user’s todo', async () => {
+    const aliceTodo = await makeTodo(aliceToken)
+    await deleteTodo(aliceToken, aliceTodo.body.id)
+
+    const res = await call(`/todos/${aliceTodo.body.id}/restore`, {
+      method: 'POST',
+      token: bobToken,
+    })
+
+    expect(res.status).toBe(404)
+    const row = await prisma.todo.findUnique({
+      where: { id: aliceTodo.body.id },
+    })
+    expect(row?.deletedAt).toBeInstanceOf(Date)
+  })
+
+  /// Restoring something that was never deleted is a no-op, not a success.
+  /// Answering 200 here would let a bug quietly "restore" live rows forever.
+  it('404s on a todo that is not deleted', async () => {
+    const created = await makeTodo(aliceToken)
+
+    const res = await call(`/todos/${created.body.id}/restore`, {
+      method: 'POST',
+      token: aliceToken,
+    })
+
+    expect(res.status).toBe(404)
+  })
+
+  it('requires a token', async () => {
+    const created = await makeTodo(aliceToken)
+    await deleteTodo(aliceToken, created.body.id)
+
+    const res = await call(`/todos/${created.body.id}/restore`, {
+      method: 'POST',
+    })
+    expect(res.status).toBe(401)
+  })
+})

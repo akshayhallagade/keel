@@ -47,11 +47,17 @@ export const isoOf = (y: number, m: number, d: number) =>
  * UTC it reads back as the 8th.
  * ------------------------------------------------------------------------ */
 
-/// "2026-03-09" → the ISO instant of local midnight that day.
-export const dayToInstant = (day: string) => {
+/// "2026-03-09" + "17:30" → the ISO instant of that local moment.
+/// A blank time means local midnight, which is how "a day, no particular time"
+/// is stored.
+export const dayTimeToInstant = (day: string, time = '') => {
   const [y, m, d] = day.split('-').map(Number)
-  return new Date(y, m - 1, d).toISOString()
+  const [h, min] = time ? time.split(':').map(Number) : [0, 0]
+  return new Date(y, m - 1, d, h, min).toISOString()
 }
+
+/// "2026-03-09" → the ISO instant of local midnight that day.
+export const dayToInstant = (day: string) => dayTimeToInstant(day)
 
 /// An ISO instant → the "YYYY-MM-DD" day it falls on, in local time.
 export const instantToDay = (iso: string) => {
@@ -59,13 +65,48 @@ export const instantToDay = (iso: string) => {
   return isoOf(d.getFullYear(), d.getMonth(), d.getDate())
 }
 
+/**
+ * Does this due date name a time of day, or just a day?
+ *
+ * Local midnight means "just a day" — that is exactly what `dayTimeToInstant`
+ * writes when no time was picked. So the answer is "it is not local midnight".
+ *
+ * The cost is that a todo genuinely due at 00:00 reads as having no time. That
+ * is worth one fewer column: nobody picks midnight, and the two cases look the
+ * same to the person reading the row anyway.
+ */
+export const instantHasTime = (iso: string) => {
+  const d = new Date(iso)
+  return d.getHours() !== 0 || d.getMinutes() !== 0
+}
+
+/// An ISO instant → "17:30" local, which is what `<input type="time">` wants.
+/// Empty when the todo has no time of day.
+export const instantToTime = (iso: string) => {
+  const d = new Date(iso)
+  return instantHasTime(iso)
+    ? `${pad2(d.getHours())}:${pad2(d.getMinutes())}`
+    : ''
+}
+
 /// Today as a "YYYY-MM-DD" day string, in local time.
 export const todayDay = (now: Date = new Date()) =>
   isoOf(now.getFullYear(), now.getMonth(), now.getDate())
 
-/// What a due date reads as on a row: "9 MAR", or nothing when there is none.
-export const fmtDueAt = (iso: string | null) =>
-  iso ? fmtDue(instantToDay(iso)) : ''
+/// "5:30PM". Compact on purpose — it sits on a row next to the date.
+export const fmtTime = (iso: string) => {
+  const d = new Date(iso)
+  const h = d.getHours()
+  return `${h % 12 || 12}:${pad2(d.getMinutes())}${h < 12 ? 'AM' : 'PM'}`
+}
+
+/// What a due date reads as on a row: "9 MAR", or "9 MAR · 5:30PM" when a time
+/// was picked, or nothing when there is no date at all.
+export const fmtDueAt = (iso: string | null) => {
+  if (!iso) return ''
+  const day = fmtDue(instantToDay(iso))
+  return instantHasTime(iso) ? `${day} · ${fmtTime(iso)}` : day
+}
 
 /* ---------------------------------------------------------------------------
  * Which list a todo belongs in.
@@ -137,6 +178,29 @@ export function groupFor(
   weekEnds.setDate(weekEnds.getDate() + 7)
   return dueDay < weekEnds ? 'THIS_WEEK' : 'SOMEDAY'
 }
+
+/**
+ * How many whole days late a todo is. 0 when it is not late.
+ *
+ * Counted in days, not hours: something due yesterday at 9am reads "1D" all
+ * through today rather than creeping to "2D" by the evening.
+ *
+ * The division rounds rather than truncates because a local day is not always
+ * 24 hours — the clocks going forward makes one 23 hours long, and `Math.floor`
+ * would call that zero days and quietly stop showing the label.
+ */
+export const overdueDays = (dueAt: string | null, now: Date = new Date()) => {
+  if (!dueAt) return 0
+  const due = new Date(dueAt)
+  if (Number.isNaN(due.getTime())) return 0
+
+  const diff = startOfDay(now).getTime() - startOfDay(due).getTime()
+  return diff <= 0 ? 0 : Math.round(diff / 86_400_000)
+}
+
+/// Was this completed today? What "DONE TODAY" on the Todos rail actually means.
+export const isToday = (iso: string | null, now: Date = new Date()) =>
+  !!iso && instantToDay(iso) === todayDay(now)
 
 export const rMM = (idx: number) => pad2(R_MINS[idx])
 

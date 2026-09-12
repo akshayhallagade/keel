@@ -416,6 +416,31 @@ body:has(.hs-splash) {
   border-bottom: none;
 }
 
+/* A finished todo, shown in the Done tab. Settled rather than mid-animation:
+   .is-completing is the half-second fade on the way out, this is where it
+   lands. */
+.hs-row.is-done .hs-row-title {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.hs-row.is-done .hs-checkbox {
+  border-color: var(--accent);
+}
+
+/* Late todos sit in Today alongside everything else — groupFor keeps them in
+   front of the user on purpose — so the date is the only thing that can say
+   so. */
+.hs-row-due.is-overdue {
+  color: var(--warn);
+  font-weight: 500;
+}
+
+/* Delete is the one row button that cannot be undone by clicking it again, so
+   it only takes its warning colour on hover — quiet until you reach for it. */
+.hs-row-action.is-danger:hover {
+  color: var(--warn);
+}
+
 /* Row buttons appear on hover. Scoped to .hs-row because .hs-row-action is
    also used on hobby, routine and project rows that show it unconditionally.
    :focus-visible is here so the buttons are reachable by keyboard, which the
@@ -1419,6 +1444,27 @@ body:has(.hs-splash) {
   color: var(--accent);
   border-bottom-color: var(--accent);
 }
+/* Pushed to the far end of the tab row by the auto margin, so it reads as a
+   tool for the list rather than another tab. */
+.hs-search {
+  margin-left: auto;
+  margin-bottom: -4px;
+  min-width: 0;
+  width: 150px;
+  font: 400 11px var(--mono);
+  color: var(--ink);
+  background: none;
+  border: none;
+  border-bottom: 1px solid transparent;
+  padding: 0 0 3px;
+  outline: none;
+}
+.hs-search::placeholder {
+  color: var(--muted-2);
+}
+.hs-search:focus {
+  border-bottom-color: var(--accent);
+}
 
 /* A label/value line in a side rail. The single most repeated block in the
    screens — it was eight inline properties every time. */
@@ -1586,6 +1632,65 @@ body:has(.hs-splash) {
   font-size: 13.5px;
   color: var(--muted);
   padding: 22px 0;
+}
+/* An empty rail panel. A dash rather than a sentence: the rail is glanceable,
+   and a blank gap there reads as something failing to load. */
+.hs-empty-sm {
+  font: 400 11px var(--mono);
+  color: var(--muted-2);
+  padding: 8px 0;
+}
+
+/* ---------- Undo bar ----------
+   Deleting a todo only sets deletedAt, so the row is still there and undo is a
+   single request. Bottom centre, above the panel layer's overlay but below an
+   open panel. */
+.hs-undo {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  max-width: min(440px, calc(100vw - 32px));
+  padding: 12px 16px;
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+  z-index: 9;
+  animation: undoIn 0.22s ease both;
+}
+@keyframes undoIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+.hs-undo-text {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hs-undo-btn {
+  font: 500 10px var(--mono);
+  letter-spacing: 0.12em;
+  color: var(--paper);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--paper);
+  padding: 2px 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.hs-undo-btn:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 /* ---------- Settings ---------- */
@@ -1829,6 +1934,14 @@ body:has(.hs-splash) {
   z-index: 11;
   animation: panelIn 0.3s ease both;
   overflow-y: auto;
+  /* Always reserve the scrollbar's strip, even when nothing is scrolling.
+     Without this the bar appearing narrows the content, the text rewraps, the
+     content gets a little taller or shorter, and that can put it back under the
+     limit — so the bar is removed, the content widens, and it overflows again.
+     That loop is the flicker you see for a moment when the panel opens. With
+     the strip reserved the content is the same width either way, so there is
+     nothing to rewrap and nothing to flicker. */
+  scrollbar-gutter: stable;
 }
 .hs-panel-head {
   display: flex;

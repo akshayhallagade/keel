@@ -3,7 +3,7 @@ import type { HomeState } from '../useHomeState'
 export type TodoRowModel = ReturnType<HomeState['mkRow']>
 
 /**
- * One todo line: checkbox, title + tag/due, star, edit pencil.
+ * One todo line: checkbox, title + tag/due, star, edit pencil, delete.
  *
  * Todos and Today each had their own copy of this markup — three copies in
  * total — differing only in which border the row draws and the star's tooltip.
@@ -18,26 +18,42 @@ export default function TodoRow({
   /** Rule above instead of below — used by the grouped lists on Todos. */
   topRuled?: boolean
 }) {
+  // A ticked row in the Done tab: the checkbox is full and un-ticks it.
+  const checked = td.completing || td.done
+
   return (
     <div
       className={`hs-row${td.completing ? ' is-completing' : ''}${
-        topRuled ? ' is-top-ruled' : ''
-      }`}
+        td.done ? ' is-done' : ''
+      }${topRuled ? ' is-top-ruled' : ''}`}
       style={{ animationDelay: td.index * 0.05 + 's' }}
     >
       <button
         type="button"
-        className={`hs-checkbox${td.completing ? ' is-checked' : ''}`}
+        className={`hs-checkbox${checked ? ' is-checked' : ''}`}
         onClick={td.toggle}
-        aria-label={`Complete ${td.text}`}
+        aria-label={`${td.done ? 'Reopen' : 'Complete'} ${td.text}`}
       >
-        <span className="hs-checkbox-tick">{td.completing ? '✓' : ''}</span>
+        <span className="hs-checkbox-tick">{checked ? '✓' : ''}</span>
       </button>
 
       <div className="hs-row-body">
         <div className="hs-row-title">{td.text}</div>
         <div className="hs-row-sub">
-          <span style={{ color: td.dotColor }}>●</span> {td.tag} &nbsp; {td.due}
+          <span style={{ color: td.dotColor }}>●</span> {td.tag}
+          {td.due && (
+            <>
+              &nbsp;{' '}
+              {/* Late todos stay in Today — see groupFor — so the row is the
+                  only place that can say they are late. */}
+              <span
+                className={td.overdue ? 'hs-row-due is-overdue' : undefined}
+              >
+                {td.due}
+                {td.overdue ? ` · ${td.overdueLabel}` : ''}
+              </span>
+            </>
+          )}
         </div>
       </div>
 
@@ -58,6 +74,16 @@ export default function TodoRow({
         onClick={td.edit}
       >
         ✎
+      </button>
+
+      <button
+        type="button"
+        title="Delete"
+        aria-label={`Delete ${td.text}`}
+        className="hs-row-action is-danger"
+        onClick={td.remove}
+      >
+        ✕
       </button>
     </div>
   )

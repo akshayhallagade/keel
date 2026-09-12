@@ -1,15 +1,9 @@
+import { useEffect, useRef } from 'react'
 import type { HomeState } from '../useHomeState'
 import type { Todo } from '../types'
 import TodoRow from '../rows/TodoRow'
 
-const FILTERS = ['ALL', 'TODAY', 'THIS WEEK', 'SOMEDAY']
-
-const AREA_ROWS = [
-  { name: 'Finance', color: 'var(--accent)', count: 4 },
-  { name: 'Home', color: 'var(--warn)', count: 3 },
-  { name: 'Health', color: 'var(--positive)', count: 3 },
-  { name: 'Projects', color: 'var(--info)', count: 5 },
-]
+const FILTERS = ['ALL', 'TODAY', 'THIS WEEK', 'SOMEDAY', 'DONE']
 
 function Group({
   label,
@@ -47,6 +41,12 @@ export default function Todos({ vm }: { vm: HomeState }) {
     filter,
     setFilter,
     done,
+    doneToday,
+    areaCounts,
+    query,
+    setQuery,
+    undoable,
+    undoDelete,
     draft,
     onDraftChange,
     onDraftKey,
@@ -56,12 +56,35 @@ export default function Todos({ vm }: { vm: HomeState }) {
     todosError,
   } = vm
 
-  const doneCount = done.length
+  const addBox = useRef<HTMLInputElement>(null)
+
+  /// "/" jumps to the add box, the way it does in most things you type into
+  /// all day. Ignored while you are already in a field, or it would type "/".
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== '/' || e.ctrlKey || e.metaKey) return
+      const el = e.target as HTMLElement | null
+      if (el?.tagName === 'INPUT' || el?.tagName === 'TEXTAREA') return
+      e.preventDefault()
+      addBox.current?.focus()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
+
+  const showDone = filter === 'DONE'
   const groups = [
     { label: 'TODAY', items: todayList },
     { label: 'THIS WEEK', items: weekList },
     { label: 'SOMEDAY', items: somedayList },
   ].filter((g) => filter === 'ALL' || filter === g.label)
+
+  /// Counted from what is actually rendered, so a search that matches nothing
+  /// says so instead of leaving three empty headings.
+  const shown = showDone
+    ? done.length
+    : groups.reduce((n, g) => n + g.items.length, 0)
+  const nothingFound = !todosLoading && !todosError && shown === 0
 
   return (
     <div className="hs-screen with-rail">
@@ -69,7 +92,7 @@ export default function Todos({ vm }: { vm: HomeState }) {
         <div className="hs-title-row">
           <div className="hs-title">Todos</div>
           <div className="hs-meta-sm">
-            {todos.length} OPEN · {doneCount} DONE TODAY
+            {todos.length} OPEN · {doneToday.length} DONE TODAY
           </div>
         </div>
 
@@ -85,6 +108,14 @@ export default function Todos({ vm }: { vm: HomeState }) {
               {name}
             </button>
           ))}
+          <input
+            className="hs-search"
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search…"
+            aria-label="Search todos"
+          />
         </div>
 
         {todosError && (
@@ -95,6 +126,8 @@ export default function Todos({ vm }: { vm: HomeState }) {
 
         {todosLoading ? (
           <div className="hs-empty">Loading your todos…</div>
+        ) : showDone ? (
+          <Group label="DONE" items={done} mkRow={mkRow} first />
         ) : (
           groups.map((g, i) => (
             <Group
@@ -109,15 +142,20 @@ export default function Todos({ vm }: { vm: HomeState }) {
 
         {/* A brand-new account has nothing at all. Without this the screen is
             three empty headings and a box, which reads as broken. */}
-        {!todosLoading && !todosError && todos.length === 0 && (
+        {nothingFound && (
           <div className="hs-empty">
-            Nothing yet. Add your first todo below.
+            {query
+              ? `Nothing matches “${query}”.`
+              : showDone
+                ? 'Nothing finished yet.'
+                : 'Nothing yet. Add your first todo below.'}
           </div>
         )}
 
         <div className="hs-add-row">
           <div className="hs-add-plus">+</div>
           <input
+            ref={addBox}
             className="hs-add-input"
             value={draft}
             onChange={onDraftChange}
@@ -137,7 +175,10 @@ export default function Todos({ vm }: { vm: HomeState }) {
       <div className="hs-rail narrow">
         <div>
           <div className="hs-section-label">BY AREA</div>
-          {AREA_ROWS.map((a) => (
+          {/* Counted from the real todos. This panel used to be four invented
+              rows whose numbers never moved. */}
+          {areaCounts.length === 0 && <div className="hs-empty-sm">—</div>}
+          {areaCounts.map((a) => (
             <div key={a.name} className="hs-rail-row">
               <div>
                 <span style={{ color: a.color }}>●</span> {a.name}
@@ -147,15 +188,28 @@ export default function Todos({ vm }: { vm: HomeState }) {
           ))}
         </div>
         <div>
-          <div className="hs-section-label">DONE TODAY · {doneCount}</div>
-          {done.map((dn) => (
-            <div key={dn.text} className="hs-done-row">
+          <div className="hs-section-label">
+            DONE TODAY · {doneToday.length}
+          </div>
+          {doneToday.length === 0 && <div className="hs-empty-sm">—</div>}
+          {doneToday.map((dn) => (
+            <div key={dn.id} className="hs-done-row">
               <div className="hs-done-check">✓</div>
               <div className="hs-done-text">{dn.text}</div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Deleting is soft on the server, so undo costs nothing but a click. */}
+      {undoable && (
+        <div className="hs-undo" role="status">
+          <span className="hs-undo-text">Deleted “{undoable.text}”</span>
+          <button type="button" className="hs-undo-btn" onClick={undoDelete}>
+            UNDO
+          </button>
+        </div>
+      )}
     </div>
   )
 }
