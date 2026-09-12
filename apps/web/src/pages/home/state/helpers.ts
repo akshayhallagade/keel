@@ -179,6 +179,26 @@ export function groupFor(
   return dueDay < weekEnds ? 'THIS_WEEK' : 'SOMEDAY'
 }
 
+/// The three section headings on the Todos screen, in the order they stack.
+const SECTIONS = ['TODAY', 'THIS WEEK', 'SOMEDAY']
+
+/**
+ * Which sections a Todos tab shows.
+ *
+ * "THIS WEEK" shows TODAY as well, because today is part of this week.
+ * `groupFor` gives a todo exactly one group, and Today claims anything due
+ * today or earlier — so without this, clicking THIS WEEK hid today's work and
+ * answered a question nobody asked.
+ *
+ * The sections stay exclusive. Showing two of them stacked lists nothing twice;
+ * merging them into one list would.
+ */
+export const sectionsFor = (filter: string) => {
+  if (filter === 'ALL') return SECTIONS
+  if (filter === 'THIS WEEK') return ['TODAY', 'THIS WEEK']
+  return [filter]
+}
+
 /**
  * How many whole days late a todo is. 0 when it is not late.
  *

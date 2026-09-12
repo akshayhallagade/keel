@@ -10,6 +10,7 @@ import {
   instantToTime,
   isToday,
   overdueDays,
+  sectionsFor,
   startOfWeek,
 } from './helpers'
 
@@ -213,5 +214,36 @@ describe('isToday', () => {
     const lateEvening = new Date(2026, 2, 11, 23, 59).toISOString()
     expect(isToday(justAfterMidnight, WEDNESDAY)).toBe(true)
     expect(isToday(lateEvening, WEDNESDAY)).toBe(true)
+  })
+})
+
+describe('sectionsFor: which sections a Todos tab shows', () => {
+  /**
+   * The bug this exists to stop coming back: a todo due today sits in the TODAY
+   * section, because `groupFor` gives each todo exactly one group and Today
+   * claims anything due today or earlier. Clicking THIS WEEK used to show only
+   * the remainder, so today's work vanished from a tab whose label says it
+   * covers this week.
+   */
+  it('shows today’s todos under the THIS WEEK tab', () => {
+    expect(sectionsFor('THIS WEEK')).toEqual(['TODAY', 'THIS WEEK'])
+  })
+
+  it('shows everything under ALL', () => {
+    expect(sectionsFor('ALL')).toEqual(['TODAY', 'THIS WEEK', 'SOMEDAY'])
+  })
+
+  it('shows one section for the other tabs', () => {
+    expect(sectionsFor('TODAY')).toEqual(['TODAY'])
+    expect(sectionsFor('SOMEDAY')).toEqual(['SOMEDAY'])
+  })
+
+  // Two sections stacked, never one merged list — a todo appearing twice on one
+  // screen would also make the heading counts add up to more than you own.
+  it('never repeats a section', () => {
+    for (const filter of ['ALL', 'TODAY', 'THIS WEEK', 'SOMEDAY']) {
+      const sections = sectionsFor(filter)
+      expect(new Set(sections).size).toBe(sections.length)
+    }
   })
 })

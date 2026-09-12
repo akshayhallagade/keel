@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import type { HomeState } from '../useHomeState'
 import type { Todo } from '../types'
 import TodoRow from '../rows/TodoRow'
+import { sectionsFor } from '../state/helpers'
 
 const FILTERS = ['ALL', 'TODAY', 'THIS WEEK', 'SOMEDAY', 'DONE']
 
@@ -73,11 +74,12 @@ export default function Todos({ vm }: { vm: HomeState }) {
   }, [])
 
   const showDone = filter === 'DONE'
+  const shownSections = sectionsFor(filter)
   const groups = [
     { label: 'TODAY', items: todayList },
     { label: 'THIS WEEK', items: weekList },
     { label: 'SOMEDAY', items: somedayList },
-  ].filter((g) => filter === 'ALL' || filter === g.label)
+  ].filter((g) => shownSections.includes(g.label))
 
   /// Counted from what is actually rendered, so a search that matches nothing
   /// says so instead of leaving three empty headings.
