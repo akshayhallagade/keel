@@ -3,6 +3,7 @@ import type { Theme, User, WeekStart } from '@keel/types'
 import type { UpdateProfileInput } from '@keel/validation'
 import { updateMe } from '../../../api/users'
 import type { Prefs, Profile } from '../types'
+import { FIELD_FOR_QUESTION, answersFromUser } from '../../onboarding/questions'
 
 /// Changes are held this long before being sent. Dragging across the accent
 /// swatches or flipping several toggles is one request, not six.
@@ -34,6 +35,8 @@ export function useSettings(user: User) {
     sip: user.prefSip,
   })
   const [weekStart, setWeekStartState] = useState(user.weekStart)
+  /// The onboarding answers, keyed by question id. Anything skipped reads ''.
+  const [answers, setAnswersState] = useState(() => answersFromUser(user))
   const [saveError, setSaveError] = useState('')
 
   // Everything changed since the last send, merged. A later edit to the same
@@ -110,6 +113,18 @@ export function useSettings(user: User) {
     [queue],
   )
 
+  /// Answering an onboarding question again, from Settings. Same debounced
+  /// queue as everything else, so tapping through several is one request.
+  const setAnswer = useCallback(
+    (questionId: string, value: string) => {
+      const field = FIELD_FOR_QUESTION[questionId]
+      if (!field) return
+      setAnswersState((prev) => ({ ...prev, [questionId]: value }))
+      queue({ [field]: value })
+    },
+    [queue],
+  )
+
   const setPrefs = useCallback(
     (update: (p: Prefs) => Prefs) => {
       setPrefsState((prev) => {
@@ -137,6 +152,8 @@ export function useSettings(user: User) {
     setPrefs,
     weekStart,
     setWeekStart,
+    answers,
+    setAnswer,
     settingsError: saveError,
   }
 }

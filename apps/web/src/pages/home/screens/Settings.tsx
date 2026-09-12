@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { WEEK_STARTS } from '@keel/types'
 import { ACCENTS } from '../seedData'
 import type { HomeState } from '../useHomeState'
 import { initialsOf } from '../state/helpers'
 import Chip from '../../../components/Chip'
+import { QUESTIONS } from '../../onboarding/questions'
+import DeleteAccountModal from './DeleteAccountModal'
 
 const PREF_DEFS = [
   { key: 'quote', name: 'Daily resurfaced quote', desc: 'SHOWN ON TODAY' },
@@ -70,8 +73,12 @@ export default function Settings({ vm }: { vm: HomeState }) {
     setPrefs,
     weekStart,
     setWeekStart,
+    answers,
+    setAnswer,
     settingsError,
   } = vm
+
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   const initials = initialsOf(profile.name)
   const accentName = (ACCENTS.find((a) => a.hex === accent) || ACCENTS[0]).name
@@ -131,6 +138,33 @@ export default function Settings({ vm }: { vm: HomeState }) {
           </div>
         </div>
 
+        {/* The onboarding screen signs off with "YOU CAN CHANGE ALL OF THIS
+            LATER IN SETTINGS". This is where that becomes true — the answers
+            were being saved and then were unreachable, and skipping onboarding
+            was a one-way door. */}
+        <div className="hs-section-label" style={{ marginTop: 28 }}>
+          ABOUT YOU
+        </div>
+        <div className="hs-meta-sm" style={{ marginTop: 8, marginBottom: 4 }}>
+          FROM ONBOARDING · CHANGE ANY OF THESE ANY TIME
+        </div>
+        {QUESTIONS.map((q) => (
+          <div key={q.id} className="hs-answer-row">
+            <div className="hs-answer-label">{q.label}</div>
+            <div className="hs-answer-options">
+              {q.options.map((option) => (
+                <Chip
+                  key={option}
+                  flat
+                  label={option}
+                  selected={answers[q.id] === option}
+                  onClick={() => setAnswer(q.id, option)}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+
         <div className="hs-section-label" style={{ marginTop: 28 }}>
           ACCOUNT
         </div>
@@ -160,7 +194,11 @@ export default function Settings({ vm }: { vm: HomeState }) {
           >
             SIGN OUT
           </button>
-          <button type="button" className="hs-btn-outline is-danger">
+          <button
+            type="button"
+            className="hs-btn-outline is-danger"
+            onClick={() => setConfirmingDelete(true)}
+          >
             DELETE ACCOUNT
           </button>
         </div>
@@ -255,6 +293,17 @@ export default function Settings({ vm }: { vm: HomeState }) {
           </div>
         </div>
       </div>
+
+      {confirmingDelete && (
+        <DeleteAccountModal
+          email={profile.email}
+          onClose={() => setConfirmingDelete(false)}
+          // The account is gone and the token is already dead, so the only
+          // sensible next screen is the sign-in one. onSignOut clears the
+          // stored token and drops us back there.
+          onDeleted={vm.onSignOut}
+        />
+      )}
     </div>
   )
 }

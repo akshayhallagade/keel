@@ -1564,6 +1564,23 @@ body:has(.hs-splash) {
   left: 16px;
 }
 
+/* One onboarding question in Settings: its short label, then its options
+   wrapping beneath. Stacked because the option text is full sentences, not
+   the three-letter chips the rail can line up side by side. */
+.hs-answer-row {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.hs-answer-label {
+  font-size: 13.5px;
+  margin-bottom: 9px;
+}
+.hs-answer-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 /* Placeholder line for a list that is loading, empty, or failed. */
 .hs-empty {
   font-size: 13.5px;

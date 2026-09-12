@@ -9,3 +9,7 @@ export const updateMe = (input: UpdateProfileInput) =>
     method: 'PATCH',
     body: JSON.stringify(input),
   })
+
+/// Closes the account and tombstones everything it owns. The server answers 204
+/// with no body, and the caller's token stops working immediately.
+export const deleteMe = () => apiFetch<null>('/users/me', { method: 'DELETE' })
