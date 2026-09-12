@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { Todo, TodoBucket } from '@keel/types'
+import type { Todo, WeekStart } from '@keel/types'
 import { DOT_COLORS } from '../seedData'
 import type { TodoPanelState } from '../types'
 import * as api from '../../../api/todos'
 import { ApiError } from '../../../api/client'
 import {
   dayToInstant,
+  groupFor,
+  type TodoGroup,
   fmtDueAt,
   instantToDay,
   isISO,
   isoOf,
   monthLong,
+  todayDay,
 } from './helpers'
 
 const AREAS = ['FINANCE', 'HOME', 'HEALTH', 'PROJECTS', 'INBOX']
@@ -26,8 +29,11 @@ const COMPLETE_MS = 700
  * box is instant. If the request fails the local change is rolled back and
  * `todosError` says so — the alternative is a screen quietly disagreeing with
  * the server.
+ *
+ * `weekStart` decides where the "this week" boundary falls, so the three lists
+ * follow the user's own idea of when a week begins.
  */
-export function useTodos() {
+export function useTodos(weekStart: WeekStart) {
   const [todos, setTodos] = useState<Todo[]>([])
   const [loading, setLoading] = useState(true)
   const [todosError, setTodosError] = useState('')
@@ -74,13 +80,16 @@ export function useTodos() {
 
   // --- Mutations -----------------------------------------------------------
 
+  /// Typing into the quick-add box means "today" — that is what the box is
+  /// for — so it gets today's date. Without one it would have no due date and
+  /// land in Someday, which is not what anyone typing into a todo list means.
   const add = useCallback(
-    (input: { text: string; area?: string; bucket?: TodoBucket }) =>
+    (input: { text: string; area?: string }) =>
       api
         .createTodo({
           text: input.text,
           area: input.area ?? 'INBOX',
-          bucket: input.bucket ?? 'TODAY',
+          dueAt: dayToInstant(todayDay()),
           starred: false,
         })
         // Newest first, matching the server's ordering.
@@ -175,7 +184,6 @@ export function useTodos() {
           area: t.area,
           day: t.dueAt ? instantToDay(t.dueAt) : '',
           starred: t.starred,
-          bucket: t.bucket,
         }),
     }),
     [completing, toggleStar, complete],
@@ -186,12 +194,16 @@ export function useTodos() {
   const open = todos.filter((t) => !t.completedAt)
   const done = todos.filter((t) => t.completedAt)
 
-  const inBucket = (bucket: TodoBucket) =>
-    open.filter((t) => t.bucket === bucket)
+  /// Worked out from the due date every render, against the clock and the
+  /// user's chosen first day of the week — never read off the record. This is
+  /// what stops a todo added on Monday still claiming to be "today" on
+  /// Wednesday.
+  const inGroup = (group: TodoGroup) =>
+    open.filter((t) => groupFor(t.dueAt, weekStart) === group)
 
-  const todayList = inBucket('TODAY')
-  const weekList = inBucket('THIS_WEEK')
-  const somedayList = inBucket('SOMEDAY')
+  const todayList = inGroup('TODAY')
+  const weekList = inGroup('THIS_WEEK')
+  const somedayList = inGroup('SOMEDAY')
   const starred = open.filter((t) => t.starred)
 
   // --- Due-date calendar, shown inside the todo panel ----------------------
@@ -253,7 +265,6 @@ export function useTodos() {
     const fields = {
       text: panel.text.trim(),
       area: panel.area,
-      bucket: panel.bucket,
       starred: panel.starred,
       dueAt: panel.day ? dayToInstant(panel.day) : null,
     }
@@ -278,9 +289,8 @@ export function useTodos() {
       id: null,
       text: draft.trim(),
       area: 'INBOX',
-      day: '',
+      day: todayDay(),
       starred: false,
-      bucket: 'TODAY',
     })
     setDraft('')
   }

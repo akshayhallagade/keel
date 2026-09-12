@@ -11,7 +11,6 @@ export const toPublicTodo = (todo: DbTodo): Todo => ({
   id: todo.id,
   text: todo.text,
   area: todo.area,
-  bucket: todo.bucket,
   dueAt: todo.dueAt?.toISOString() ?? null,
   starred: todo.starred,
   completedAt: todo.completedAt?.toISOString() ?? null,

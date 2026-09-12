@@ -4,15 +4,6 @@
 // cascade, real timestamps, soft delete, and no stored value that could be
 // calculated. See docs/decisions.md.
 
-/// Which list a todo sits in on the Todos screen.
-/// Deliberately separate from dueAt: the user picks the bucket, and a "this
-/// week" todo may still have no date at all. See docs/decisions.md.
-enum TodoBucket {
-  TODAY
-  THIS_WEEK
-  SOMEDAY
-}
-
 model Todo {
   /// cuid(2), not cuid(): v1 is deprecated upstream and encodes creation order,
   /// which these ids leak in URLs. Changed while the table is empty — after
@@ -35,11 +26,16 @@ model Todo {
   /// worth.
   area String @db.VarChar(40)
 
-  bucket TodoBucket @default(TODAY)
-
-  /// A real instant, never a phrase like "OVERDUE 2D". Whether something is
-  /// overdue is worked out when it is read, against the reader's clock.
-  /// Null means no date — the Someday pile.
+  /// A real instant, never a phrase like "OVERDUE 2D".
+  ///
+  /// This alone decides which list a todo appears in — Today, This week, or
+  /// Someday — worked out when it is read, against the reader's clock and
+  /// their chosen first day of the week.
+  ///
+  /// There used to be a `bucket` enum stored alongside it. A stored answer to
+  /// "is this for today?" is only true on the day it was written: something
+  /// filed under TODAY on Monday was still sitting under TODAY on Wednesday.
+  /// Null means no date at all — the Someday pile.
   dueAt DateTime?
 
   /// Top 3 on the Today screen.

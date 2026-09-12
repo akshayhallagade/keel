@@ -40,7 +40,6 @@ export const todoService = {
     return todoRepository.create(userId, {
       text: input.text,
       area: input.area,
-      bucket: input.bucket,
       starred: input.starred,
       // The schema hands over an ISO string; the column wants an instant.
       dueAt: input.dueAt ? new Date(input.dueAt) : null,

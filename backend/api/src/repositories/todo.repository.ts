@@ -11,12 +11,11 @@ import { prisma, type Prisma } from '@keel/db'
  * every lookup, not something callers remember to add.
  */
 export const todoRepository = {
-  list: (userId: string, filters: { bucket?: string; completed?: boolean }) =>
+  list: (userId: string, filters: { completed?: boolean }) =>
     prisma.todo.findMany({
       where: {
         userId,
         deletedAt: null,
-        ...(filters.bucket ? { bucket: filters.bucket as never } : {}),
         // `completed: false` means "still open", which is completedAt IS NULL.
         ...(filters.completed === undefined
           ? {}

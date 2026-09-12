@@ -1,18 +1,9 @@
-/// Todos come from the API now, so their shape is the shared one rather than a
-/// local copy. `TodoBucket` replaces the old `TodoGroup`: same three lists, but
-/// THIS_WEEK rather than 'THIS WEEK', because it is an enum value on the wire
-/// and not a label. LIST_LABEL below turns it back into something readable.
-export type { Todo, TodoBucket } from '@keel/types'
-
-import type { TodoBucket } from '@keel/types'
-
-export const BUCKETS: TodoBucket[] = ['TODAY', 'THIS_WEEK', 'SOMEDAY']
-
-export const BUCKET_LABEL: Record<TodoBucket, string> = {
-  TODAY: 'TODAY',
-  THIS_WEEK: 'THIS WEEK',
-  SOMEDAY: 'SOMEDAY',
-}
+/// Todos come from the API, so their shape is the shared one rather than a
+/// local copy.
+///
+/// Which of the three lists a todo appears in is not part of that shape. It is
+/// worked out from `dueAt` at render time — see `groupFor` in state/helpers.ts.
+export type { Todo } from '@keel/types'
 
 export type RoutinePeriod =
   'WAKE UP' | 'MORNING' | 'AFTERNOON' | 'EVENING' | 'BEDTIME'
@@ -102,7 +93,6 @@ export interface TodoPanelState {
   /// no date.
   day: string
   starred: boolean
-  bucket: TodoBucket
   /// How many months the calendar has been paged from its starting month.
   calShift?: number
 }

@@ -1,8 +1,5 @@
 import { z } from 'zod'
 
-/// Matches the TodoBucket enum in the Prisma schema.
-export const todoBucket = z.enum(['TODAY', 'THIS_WEEK', 'SOMEDAY'])
-
 /// The column is VARCHAR(500); rejecting here gives a 400 with a clear message
 /// instead of a 500 from the driver.
 const text = z.string().trim().min(1).max(500)
@@ -16,7 +13,6 @@ const dueAt = z.iso.datetime({ offset: true }).nullable()
 export const createTodoSchema = z.object({
   text,
   area: area.default('INBOX'),
-  bucket: todoBucket.default('TODAY'),
   dueAt: dueAt.optional(),
   starred: z.boolean().default(false),
 })
@@ -28,7 +24,6 @@ export const updateTodoSchema = z
   .object({
     text,
     area,
-    bucket: todoBucket,
     dueAt,
     starred: z.boolean(),
     completed: z.boolean(),
@@ -36,8 +31,11 @@ export const updateTodoSchema = z
   .partial()
 
 /// Filters for the list endpoint. All optional; absent means "no filter".
+///
+/// There is no bucket filter: Today / This week / Someday depend on the
+/// reader's clock and their chosen first day of the week, so they are worked
+/// out client-side from `dueAt` rather than asked of the database.
 export const listTodosSchema = z.object({
-  bucket: todoBucket.optional(),
   /// "true" / "false" as query strings, since these arrive in the URL.
   completed: z
     .enum(['true', 'false'])

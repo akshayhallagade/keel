@@ -1,3 +1,5 @@
+import type { WeekStart } from '@keel/types'
+
 /// Date, time and money formatting shared by the home screens.
 /// Pure functions only — nothing here touches React.
 
@@ -57,9 +59,84 @@ export const instantToDay = (iso: string) => {
   return isoOf(d.getFullYear(), d.getMonth(), d.getDate())
 }
 
+/// Today as a "YYYY-MM-DD" day string, in local time.
+export const todayDay = (now: Date = new Date()) =>
+  isoOf(now.getFullYear(), now.getMonth(), now.getDate())
+
 /// What a due date reads as on a row: "9 MAR", or nothing when there is none.
 export const fmtDueAt = (iso: string | null) =>
   iso ? fmtDue(instantToDay(iso)) : ''
+
+/* ---------------------------------------------------------------------------
+ * Which list a todo belongs in.
+ *
+ * Worked out from its due date every time the screen draws, never stored. "Is
+ * this for today?" is a question about *now*: a stored answer is only true on
+ * the day it was written, and something filed under Today on Monday was still
+ * sitting under Today on Wednesday.
+ * ------------------------------------------------------------------------ */
+
+export type TodoGroup = 'TODAY' | 'THIS_WEEK' | 'SOMEDAY'
+
+/// JavaScript's day numbering, which `Date.getDay()` returns.
+const DAY_INDEX: Record<WeekStart, number> = {
+  SUN: 0,
+  MON: 1,
+  TUE: 2,
+  WED: 3,
+  THU: 4,
+  FRI: 5,
+  SAT: 6,
+}
+
+/// Local midnight at the start of the day `d` falls in.
+const startOfDay = (d: Date) =>
+  new Date(d.getFullYear(), d.getMonth(), d.getDate())
+
+/// Local midnight at the start of the week `now` falls in, counting the week as
+/// beginning on the user's chosen day.
+export const startOfWeek = (now: Date, weekStart: WeekStart) => {
+  const today = startOfDay(now)
+  // How many days back the most recent `weekStart` is. The +7 and %7 keep it
+  // positive when the week's first day is later in JavaScript's numbering than
+  // today is — a Monday-start week looked at on a Sunday, for instance.
+  const back = (today.getDay() - DAY_INDEX[weekStart] + 7) % 7
+  today.setDate(today.getDate() - back)
+  return today
+}
+
+/**
+ * Which of the three lists a todo belongs in right now.
+ *
+ * - no due date            -> Someday
+ * - due today, or overdue  -> Today. An overdue thing is today's problem, not
+ *                             history, so it stays in front of the user.
+ * - due later this week    -> This week, where the week starts on the day the
+ *                             user picked in Settings
+ * - anything further out   -> Someday
+ *
+ * `now` is injectable so this can be tested without waiting for Tuesday.
+ */
+export function groupFor(
+  dueAt: string | null,
+  weekStart: WeekStart,
+  now: Date = new Date(),
+): TodoGroup {
+  if (!dueAt) return 'SOMEDAY'
+
+  const due = new Date(dueAt)
+  if (Number.isNaN(due.getTime())) return 'SOMEDAY'
+
+  // Compared by day, not by instant: a todo due at 9am today is still "today"
+  // at 6pm, and one due at 11pm today is not "tomorrow".
+  const dueDay = startOfDay(due)
+  const today = startOfDay(now)
+  if (dueDay <= today) return 'TODAY'
+
+  const weekEnds = startOfWeek(now, weekStart)
+  weekEnds.setDate(weekEnds.getDate() + 7)
+  return dueDay < weekEnds ? 'THIS_WEEK' : 'SOMEDAY'
+}
 
 export const rMM = (idx: number) => pad2(R_MINS[idx])
 

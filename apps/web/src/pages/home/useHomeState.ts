@@ -86,7 +86,7 @@ export function useHomeState(user: User, onSignOut: () => void) {
     [startCount],
   )
 
-  const todos = useTodos()
+  const todos = useTodos(settings.weekStart)
   const routines = useRoutines(askDelete)
   const projects = useProjects(askDelete, go)
   const alarms = useAlarms()

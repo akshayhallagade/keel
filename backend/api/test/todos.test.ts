@@ -83,7 +83,8 @@ describe('POST /todos', () => {
     expect(res.body.text).toBe('Call the plumber')
     // Defaults, so the client can send only the text.
     expect(res.body.area).toBe('INBOX')
-    expect(res.body.bucket).toBe('TODAY')
+    // No date at all. The web app reads that as Someday.
+    expect(res.body.dueAt).toBeNull()
     expect(res.body.completedAt).toBeNull()
   })
 
@@ -107,7 +108,7 @@ describe('POST /todos', () => {
   it.each([
     ['blank text', { text: '   ' }],
     ['text past the column limit', { text: 'x'.repeat(501) }],
-    ['an unknown bucket', { bucket: 'WHENEVER' }],
+    ['an area past the column limit', { area: 'x'.repeat(41) }],
     ['a due date that is not a date', { dueAt: 'next tuesday' }],
   ])('rejects %s with 400', async (_label, patch) => {
     const res = await makeTodo(aliceToken, patch)
@@ -140,14 +141,18 @@ describe('GET /todos', () => {
     expect(Object.keys(res.body[0])).not.toContain('deletedAt')
   })
 
-  it('filters by bucket', async () => {
-    await makeTodo(aliceToken, { text: 'Today', bucket: 'TODAY' })
-    await makeTodo(aliceToken, { text: 'Someday', bucket: 'SOMEDAY' })
+  /// Today / This week / Someday are worked out from `dueAt` by whoever is
+  /// reading it, against their own clock and their chosen first day of the
+  /// week — see `groupFor` in the web app. The API has no such filter, and an
+  /// unknown query string must not quietly drop rows.
+  it('ignores a filter it does not know', async () => {
+    await makeTodo(aliceToken, { text: 'One' })
+    await makeTodo(aliceToken, { text: 'Two' })
 
     const res = await call('/todos?bucket=SOMEDAY', { token: aliceToken })
 
-    expect(res.body).toHaveLength(1)
-    expect(res.body[0].text).toBe('Someday')
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveLength(2)
   })
 
   it('filters open from completed', async () => {
